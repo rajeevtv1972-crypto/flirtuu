@@ -43,7 +43,7 @@
       width: min(100%, 500px);
       position: relative;
       isolation: isolate;
-      animation: arrive .7s cubic-bezier(.2,.8,.2,1) both;
+      animation: scene-fade .7s cubic-bezier(.2,.8,.2,1) both;
     }
     .sparkle {
       position: absolute;
@@ -103,22 +103,16 @@
     }
     .actions {
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 12px;
       margin: 23px auto 8px;
       position: relative;
     }
-    .no-cloud {
-      position: relative;
-      width: min(100%, 310px);
-      height: 94px;
-      margin: 0 auto;
-      flex: 0 0 94px;
-    }
-    .no-cloud .no-button {
-      position: absolute;
+    .no-floater {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      z-index: 5;
       width: 82px;
       min-width: 82px;
       min-height: 38px;
@@ -128,14 +122,8 @@
       user-select: none;
       -webkit-user-select: none;
       will-change: left, top;
-      transition: left .14s ease, top .14s ease, transform .14s ease;
+      transition: left .22s ease, top .22s ease, transform .18s ease;
     }
-    .no-cloud .no-button:nth-child(1) { left: 0; top: 0; }
-    .no-cloud .no-button:nth-child(2) { left: calc(50% - 41px); top: 0; }
-    .no-cloud .no-button:nth-child(3) { left: calc(100% - 82px); top: 0; }
-    .no-cloud .no-button:nth-child(4) { left: 0; top: 52px; }
-    .no-cloud .no-button:nth-child(5) { left: calc(50% - 41px); top: 52px; }
-    .no-cloud .no-button:nth-child(6) { left: calc(100% - 82px); top: 52px; }
     .btn {
       min-width: 110px;
       min-height: 43px;
@@ -154,6 +142,7 @@
       background: linear-gradient(135deg, #f33c8b, var(--pink-dark));
       box-shadow: 0 7px 16px rgba(220, 39, 111, .24);
     }
+    .yes { position: relative; z-index: 12; }
     .yes:hover, .primary:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(220, 39, 111, .28); }
     .no {
       color: #655762;
@@ -248,6 +237,7 @@
       border-radius: 3px; pointer-events: none;
       animation: confetti-fall 2.8s linear forwards;
     }
+    @keyframes scene-fade { from { opacity: 0; } to { opacity: 1; } }
     @keyframes arrive { from { opacity: 0; transform: translateY(12px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
     @keyframes bob { 0%,100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-7px) rotate(1deg); } }
     @keyframes dance { 0%,100% { transform: rotate(-5deg) translateY(0) scale(1); } 25% { transform: rotate(4deg) translateY(-5px) scale(1.02); } 50% { transform: rotate(-3deg) translateY(0) scale(1); } 75% { transform: rotate(5deg) translateY(-4px) scale(1.02); } }
@@ -297,15 +287,8 @@
       </div>
       <h1 id="questionTitle"><span class="recipient" id="recipientName">Hey girl</span>, will you be my girlfriend?</h1>
       <p class="subtitle">I have a tiny question for you… and I’m hoping for a very big <b>YES</b> 💗</p>
+      <button class="btn no no-floater" id="noButton" type="button" aria-label="No — try to catch me!">No 🙈</button>
       <div class="actions" id="questionActions">
-        <div class="no-cloud" id="noCloud" aria-label="A swarm of impossible-to-click No buttons">
-          <button class="btn no no-button" type="button" tabindex="-1" aria-hidden="true">No 🙈</button>
-          <button class="btn no no-button" type="button" tabindex="-1" aria-hidden="true">No 🙈</button>
-          <button class="btn no no-button" type="button" tabindex="-1" aria-hidden="true">No 🙈</button>
-          <button class="btn no no-button" type="button" tabindex="-1" aria-hidden="true">No 🙈</button>
-          <button class="btn no no-button" type="button" tabindex="-1" aria-hidden="true">No 🙈</button>
-          <button class="btn no no-button" type="button" tabindex="-1" aria-hidden="true">No 🙈</button>
-        </div>
         <button class="btn yes" id="yesButton" type="button">Yes! 💖</button>
       </div>
       <p class="tiny-note" id="tinyNote">psst… there’s only one right answer 😉</p>
@@ -371,8 +354,7 @@
       const successCard = document.getElementById('successCard');
       const recipientName = document.getElementById('recipientName');
       const questionTitle = document.getElementById('questionTitle');
-      const noCloud = document.getElementById('noCloud');
-      const noButtons = Array.from(document.querySelectorAll('.no-button'));
+      const noButton = document.getElementById('noButton');
       const yesButton = document.getElementById('yesButton');
       const tinyNote = document.getElementById('tinyNote');
       const shareButton = document.getElementById('shareButton');
@@ -390,92 +372,114 @@
 
       let noAttempts = 0;
       let lastDodgeAt = 0;
+      let wanderTimer = null;
 
-      function shuffled(items) {
-        const result = items.slice();
-        for (let i = result.length - 1; i > 0; i -= 1) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [result[i], result[j]] = [result[j], result[i]];
-        }
-        return result;
+      function clamp(value, min, max) {
+        return Math.min(Math.max(value, min), Math.max(min, max));
       }
 
-      function getNoSlots() {
-        const width = noCloud.clientWidth;
-        const buttonWidth = noButtons[0]?.offsetWidth || 82;
-        const buttonHeight = noButtons[0]?.offsetHeight || 38;
-        const maxLeft = Math.max(0, width - buttonWidth);
-        const maxTop = Math.max(0, noCloud.clientHeight - buttonHeight);
-        return [
-          [0, 0],
-          [maxLeft / 2, 0],
-          [maxLeft, 0],
-          [0, maxTop],
-          [maxLeft / 2, maxTop],
-          [maxLeft, maxTop]
-        ];
+      function setNoPosition(left, top) {
+        const margin = 8;
+        const maxLeft = window.innerWidth - noButton.offsetWidth - margin;
+        const maxTop = window.innerHeight - noButton.offsetHeight - margin;
+        noButton.style.left = Math.round(clamp(left, margin, maxLeft)) + 'px';
+        noButton.style.top = Math.round(clamp(top, margin, maxTop)) + 'px';
       }
 
-      function arrangeNoButtons(randomize) {
-        const slots = getNoSlots();
-        const positions = randomize ? shuffled(slots) : slots;
-        noButtons.forEach(function (button, index) {
-          const position = positions[index % positions.length];
-          button.style.left = Math.round(position[0]) + 'px';
-          button.style.top = Math.round(position[1]) + 'px';
-        });
+      function hideNoBehindYes() {
+        const yesRect = yesButton.getBoundingClientRect();
+        setNoPosition(
+          yesRect.left + (yesRect.width - noButton.offsetWidth) / 2,
+          yesRect.top + (yesRect.height - noButton.offsetHeight) / 2
+        );
+        tinyNote.textContent = 'where did No go? 🙈 it’s hiding behind YES! 💖';
       }
 
-      function dodgeNoButtons(event) {
-        if (event) {
-          event.preventDefault();
-          event.stopPropagation();
-        }
-        const now = performance.now();
-        if (now - lastDodgeAt < 140) return;
-        lastDodgeAt = now;
+      function moveNoButton() {
+        if (successCard.hidden === false) return;
         noAttempts += 1;
-        if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-          arrangeNoButtons(true);
+
+        // Every few hops, let the Yes button cover No completely.
+        if (noAttempts % 4 === 0) {
+          hideNoBehindYes();
+          return;
         }
+
+        const maxLeft = window.innerWidth - noButton.offsetWidth - 8;
+        const maxTop = window.innerHeight - noButton.offsetHeight - 8;
+        let left = 8 + Math.random() * Math.max(0, maxLeft - 8);
+        let top = 8 + Math.random() * Math.max(0, maxTop - 8);
+
+        // Avoid landing directly beneath the pointer when the user is chasing it.
+        if (typeof lastPointerX === 'number' && typeof lastPointerY === 'number') {
+          const tooClose = Math.hypot(left - lastPointerX, top - lastPointerY) < 130;
+          if (tooClose) {
+            left = (left + maxLeft * 0.57) % Math.max(1, maxLeft);
+            top = (top + maxTop * 0.61) % Math.max(1, maxTop);
+          }
+        }
+
+        setNoPosition(left, top);
         tinyNote.textContent = noAttempts > 2
-          ? 'nope, nope, nope! 😜 the pink YES is your only way out 💗'
-          : 'the No buttons keep multiplying… just tap YES! 💕';
+          ? 'you can chase it all over the screen 😜'
+          : 'catch that No button if you can 🙈';
       }
 
-      noButtons.forEach(function (button) {
-        button.addEventListener('pointerenter', function () {
-          dodgeNoButtons();
-        });
-        button.addEventListener('pointerdown', function (event) {
-          dodgeNoButtons(event);
-        });
-        button.addEventListener('click', function (event) {
-          event.preventDefault();
-          event.stopImmediatePropagation();
-          dodgeNoButtons(event);
-          tinyNote.textContent = 'Nice try 🙈 No is not an option here — press YES! 💖';
-        });
-        button.addEventListener('keydown', function (event) {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            event.stopPropagation();
-            dodgeNoButtons(event);
-          }
-        });
-        button.addEventListener('focus', function () {
-          dodgeNoButtons();
-        });
-      });
+      let lastPointerX = null;
+      let lastPointerY = null;
+      document.addEventListener('pointermove', function (event) {
+        lastPointerX = event.clientX;
+        lastPointerY = event.clientY;
+      }, { passive: true });
 
-      arrangeNoButtons(false);
+      noButton.addEventListener('pointerenter', function (event) {
+        if (event.pointerType === 'mouse' || event.pointerType === 'pen') moveNoButton();
+      });
+      noButton.addEventListener('pointerdown', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        moveNoButton();
+      });
+      noButton.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        moveNoButton();
+      });
+      noButton.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          moveNoButton();
+        }
+      });
+      noButton.addEventListener('focus', moveNoButton);
+
+      function startWandering() {
+        if (wanderTimer) window.clearInterval(wanderTimer);
+        wanderTimer = window.setInterval(function () {
+          if (!document.hidden && successCard.hidden) moveNoButton();
+        }, 1900);
+      }
+
+      // Start close to Yes, then let No roam the whole viewport.
+      function placeNoNearYes() {
+        const rect = yesButton.getBoundingClientRect();
+        setNoPosition(rect.left - noButton.offsetWidth - 14, rect.top + rect.height / 2 - noButton.offsetHeight / 2);
+      }
+      placeNoNearYes();
+      window.setTimeout(function () {
+        moveNoButton();
+        startWandering();
+      }, 1100);
+
       window.addEventListener('resize', function () {
-        arrangeNoButtons(false);
+        setNoPosition(parseFloat(noButton.style.left) || 8, parseFloat(noButton.style.top) || 8);
       });
 
       function celebrate() {
         questionCard.hidden = true;
         successCard.hidden = false;
+        noButton.hidden = true;
+        if (wanderTimer) window.clearInterval(wanderTimer);
         document.title = 'Yayy! 💕';
         launchConfetti();
       }
