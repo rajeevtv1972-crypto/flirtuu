@@ -4,7 +4,7 @@ A cute, responsive Valentine-style question page inspired by the supplied refere
 
 ## Features
 - Personalised question using the `?to=Name` URL parameter (defaults to “Hey girl” for bulk sharing).
-- One cursor-reactive No button that dodges as the pointer approaches, roams the viewport, and occasionally hides behind Yes. Every failed chase makes Yes grow, followed by a celebratory Yes screen.
+- One cursor-reactive No button roams the viewport, dodges proximity attempts, and occasionally hides behind Yes. Each failed chase grows the Yes button. Includes a pastel contact card and celebration screen.
 - Animated bear artwork, floating hearts, and confetti.
 - Share support and a form to generate a personalised share link.
 - Responsive styling and reduced-motion support.
@@ -14,3 +14,7 @@ Open `index.html` in a browser. No build step or dependencies are needed.
 
 ## Deploy
 This is a static site. You can publish the repository root using GitHub Pages or Cloudflare Pages (no build command; output directory is the repository root).
+
+
+## Contact
+The site includes a “Wanna reach out to us?” card using Insight Forge’s contact email: `contactussiteinfotechdesk@gmail.com`.
