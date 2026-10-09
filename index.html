@@ -211,6 +211,13 @@
     .party-art:before { top: 12px; left: -4px; }
     .party-art:after { bottom: 8px; right: -4px; animation-direction: reverse; }
     .dancing-bear-gif { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .gif-sequence-caption {
+      margin: -8px auto 17px;
+      color: #9c6680;
+      font-size: 11px;
+      line-height: 1.4;
+      text-align: center;
+    }
     .heart-float { position: absolute; z-index: 2; font-size: 27px; animation: float-up 3.5s ease-in infinite; pointer-events: none; }
     .heart-float.a { left: 12%; bottom: 13%; animation-delay: -.8s; }
     .heart-float.b { right: 12%; top: 20%; animation-delay: -2.2s; }
@@ -251,51 +258,6 @@
       border-radius: 3px; pointer-events: none;
       animation: confetti-fall 2.8s linear forwards;
     }
-    .extra-love-section {
-      width: min(100%, 360px);
-      margin: 0 auto 18px;
-    }
-    .extra-love-title {
-      margin: 3px 0 10px;
-      color: #a13d70;
-      font-size: 15px;
-      line-height: 1.3;
-      letter-spacing: -.2px;
-    }
-    .love-gif-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 9px;
-    }
-    .love-gif-card {
-      min-width: 0;
-      margin: 0;
-      padding: 6px;
-      overflow: hidden;
-      border: 1px solid rgba(255,255,255,.94);
-      border-radius: 15px;
-      background: rgba(255,255,255,.72);
-      box-shadow: 0 4px 12px rgba(179, 74, 119, .08);
-    }
-    .love-gif-card img {
-      display: block;
-      width: 100%;
-      aspect-ratio: 1 / .78;
-      border-radius: 10px;
-      object-fit: cover;
-      background: #ffeaf3;
-    }
-    .love-gif-card figcaption {
-      margin: 6px 2px 1px;
-      color: #9c6680;
-      font-size: 10px;
-      line-height: 1.35;
-    }
-    .love-gif-card figcaption a {
-      color: inherit;
-      text-decoration: none;
-    }
-    .love-gif-card figcaption a:hover { text-decoration: underline; }
     @keyframes scene-fade { from { opacity: 0; } to { opacity: 1; } }
     @keyframes arrive { from { opacity: 0; transform: translateY(12px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
     @keyframes bob { 0%,100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-7px) rotate(1deg); } }
@@ -360,29 +322,9 @@
         <span class="heart-float a" aria-hidden="true">💗</span>
         <span class="heart-float b" aria-hidden="true">💖</span>
         <span class="heart-float c" aria-hidden="true">💕</span>
-        <img class="dancing-bear-gif" src="https://media1.tenor.com/m/gVC_auLWNEkAAAAd/bear-love.gif" alt="A cute brown bear and white cat hugging with floating hearts" width="320" height="256" decoding="async">
+        <img class="dancing-bear-gif" id="celebrationGif" src="https://media1.tenor.com/m/gVC_auLWNEkAAAAd/bear-love.gif" alt="A cute brown bear and white cat hugging with floating hearts" width="320" height="256" decoding="async">
       </div>
-      <section class="extra-love-section" aria-labelledby="extraLoveTitle">
-        <h2 class="extra-love-title" id="extraLoveTitle">A little extra love 💞</h2>
-        <div class="love-gif-grid">
-          <figure class="love-gif-card">
-            <img src="https://media1.tenor.com/m/EYU_t75LldAAAAAd/cute-bear-hug.gif" alt="Two cute bears sharing a hug" loading="lazy" decoding="async">
-            <figcaption><a href="https://tenor.com/view/cute-bear-hug-love-you-gif-21810409" target="_blank" rel="noopener noreferrer">Bear hugs 💗 · Tenor</a></figcaption>
-          </figure>
-          <figure class="love-gif-card">
-            <img src="https://media.tenor.com/Fh39BC4pwNAAAAAM/snuggles-snuggle.gif" alt="Cute characters cuddling together" loading="lazy" decoding="async">
-            <figcaption><a href="https://tenor.com/search/snuggles-gifs" target="_blank" rel="noopener noreferrer">Cozy cuddles 🧸 · Tenor</a></figcaption>
-          </figure>
-          <figure class="love-gif-card">
-            <img src="https://media.tenor.com/Bq89l_QP5HcAAAAM/dudu-flow-kiss-cute-dudu.gif" alt="Cute cartoon bear blowing a kiss" loading="lazy" decoding="async">
-            <figcaption><a href="https://tenor.com/search/cute-bear-love-gifs" target="_blank" rel="noopener noreferrer">Little kisses 😘 · Tenor</a></figcaption>
-          </figure>
-          <figure class="love-gif-card">
-            <img src="https://media.tenor.com/Iwd5nh7kXSkAAAAM/milk-and-mocha-milk.gif" alt="Sweet Milk and Mocha bear animation" loading="lazy" decoding="async">
-            <figcaption><a href="https://tenor.com/search/milk-and-mocha-gifs" target="_blank" rel="noopener noreferrer">Milk & Mocha 💕 · Tenor</a></figcaption>
-          </figure>
-        </div>
-      </section>
+      <p class="gif-sequence-caption" id="gifSequenceCaption" aria-live="polite">Bear hugs 💗 · 1 of 5</p>
       <div class="success-actions">
         <button class="btn secondary" type="button" id="shareButton">Share with Friends</button>
         <button class="btn primary" type="button" id="makeLinkButton">Make Your Own Link</button>
@@ -580,10 +522,62 @@
         setYesGrowthForCurrentSize();
       });
 
+      const celebrationGifs = [
+        {
+          src: 'https://media1.tenor.com/m/gVC_auLWNEkAAAAd/bear-love.gif',
+          alt: 'A cute brown bear and white cat hugging with floating hearts',
+          caption: 'Bear hugs 💗'
+        },
+        {
+          src: 'https://media1.tenor.com/m/EYU_t75LldAAAAAd/cute-bear-hug.gif',
+          alt: 'Two cute bears sharing a hug',
+          caption: 'Bear hugs 💗'
+        },
+        {
+          src: 'https://media.tenor.com/Fh39BC4pwNAAAAAM/snuggles-snuggle.gif',
+          alt: 'Cute characters cuddling together',
+          caption: 'Cozy cuddles 🧸'
+        },
+        {
+          src: 'https://media.tenor.com/Bq89l_QP5HcAAAAM/dudu-flow-kiss-cute-dudu.gif',
+          alt: 'Cute cartoon bear blowing a kiss',
+          caption: 'Little kisses 😘'
+        },
+        {
+          src: 'https://media.tenor.com/Iwd5nh7kXSkAAAAM/milk-and-mocha-milk.gif',
+          alt: 'Sweet Milk and Mocha bear animation',
+          caption: 'Milk & Mocha 💕'
+        }
+      ];
+      let gifSequenceTimer = null;
+      let currentGifIndex = 0;
+
+      function showCelebrationGif(index) {
+        const image = document.getElementById('celebrationGif');
+        const caption = document.getElementById('gifSequenceCaption');
+        if (!image || !caption) return;
+        const gif = celebrationGifs[index];
+        image.src = gif.src;
+        image.alt = gif.alt;
+        caption.textContent = gif.caption + ' · ' + (index + 1) + ' of ' + celebrationGifs.length;
+      }
+
+      function startGifSequence() {
+        if (gifSequenceTimer !== null) window.clearInterval(gifSequenceTimer);
+        currentGifIndex = 0;
+        showCelebrationGif(currentGifIndex);
+        // Tenor GIFs can loop forever, so give each one its own turn.
+        gifSequenceTimer = window.setInterval(function () {
+          currentGifIndex = (currentGifIndex + 1) % celebrationGifs.length;
+          showCelebrationGif(currentGifIndex);
+        }, 5000);
+      }
+
       function celebrate() {
         questionCard.hidden = true;
         successCard.hidden = false;
         noButton.hidden = true;
+        startGifSequence();
         document.title = 'Yayy! 💕';
         launchConfetti();
       }
