@@ -6,7 +6,7 @@ A cute, responsive Valentine-style question page inspired by the supplied refere
 - Personalised question using the `?to=Name` URL parameter (defaults to “Hey girl” for bulk sharing).
 - One cursor-reactive No button stays still until the cursor gets very close, then dodges around the viewport and only hides behind Yes after twenty-two failed chases. Each failed chase grows the Yes button. Includes a pastel contact footer and celebration screen.
 - Animated bear artwork, floating hearts, and confetti, plus a four-GIF bear-love gallery on the YES celebration screen.
-- Share support and a form to copy or share the page URL directly; personalised links include the recipient's name in the `?to=Name` parameter.
+- Share support and a form to create anonymous QuietLink URLs automatically; personalised links keep the recipient's name in the destination `?to=Name` parameter and expire after 30 days.
 - Responsive styling and reduced-motion support.
 
 ## Run locally
