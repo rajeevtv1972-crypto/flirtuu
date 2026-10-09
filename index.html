@@ -493,8 +493,8 @@
           lastDodgeAt = now;
           growYesButton();
 
-          // Let No dodge through seven failed chases; hide it on the eighth.
-          if (failedAttempts % 8 === 0) {
+          // Let No dodge through twenty-one failed chases; hide it on the twenty-second.
+          if (failedAttempts % 22 === 0) {
             hideNoBehindYes();
             return;
           }
