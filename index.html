@@ -155,51 +155,28 @@
     }
     .tiny-note { margin: 12px 0 0; color: #b36487; font-size: 11px; }
     .footer {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
       text-align: center;
       margin: 17px auto 0;
       padding: 0 10px;
       color: #a78a9b;
       font-size: 10px;
+      line-height: 1.6;
       letter-spacing: .12px;
     }
     .footer .heart { color: #e74c8a; }
-    .contact-nudge {
-      width: min(100%, 500px);
-      margin: 18px auto 0;
-      padding: 20px 18px;
-      text-align: center;
-      background: rgba(255, 255, 255, .78);
-      border: 1px solid rgba(255, 255, 255, .96);
-      border-radius: 22px;
-      box-shadow: 0 12px 36px rgba(179, 74, 119, .09);
-    }
-    .contact-nudge h2 {
-      margin: 0 0 7px;
-      font-size: 17px;
-      letter-spacing: -.25px;
+    .footer-contact { color: #a36b87; }
+    .footer-contact a {
       color: #cb1d63;
-    }
-    .contact-nudge p {
-      margin: 0 auto 13px;
-      max-width: 360px;
-      font-size: 12px;
-      line-height: 1.55;
-      color: #786c78;
-    }
-    .contact-email {
-      display: inline-block;
-      padding: 10px 17px;
-      border-radius: 999px;
-      color: white;
-      font-size: 12px;
       font-weight: 800;
       text-decoration: none;
-      background: linear-gradient(135deg, #f33c8b, #cb1d63);
-      box-shadow: 0 6px 15px rgba(220, 39, 111, .18);
-      transition: transform .18s ease, box-shadow .18s ease;
+      white-space: nowrap;
     }
-    .contact-email:hover { transform: translateY(-2px); box-shadow: 0 9px 18px rgba(220, 39, 111, .24); }
-    .contact-nudge .contact-response { margin: 11px auto 0; font-size: 10px; color: #a78a9b; }
+    .footer-contact a:hover { text-decoration: underline; }
+    .footer-copyright { color: #b59cac; font-size: 9px; }
     [hidden] { display: none !important; }
     /* The happy ending */
     .success-card { padding-top: 26px; }
@@ -368,14 +345,11 @@
       <p class="message" id="shareMessage" aria-live="polite"></p>
     </section>
 
-    <footer class="footer">made with <span class="heart">♥</span> and a little bit of courage</footer>
-
-    <section class="contact-nudge" aria-labelledby="contactTitle">
-      <h2 id="contactTitle">Wanna reach out to us? 💌</h2>
-      <p>Got a question, feedback, or a suggestion? We’d love to hear from you.</p>
-      <a class="contact-email" href="mailto:contactussiteinfotechdesk@gmail.com">✉️ Send us an Email</a>
-      <p class="contact-response">We usually respond within 24–48 hours.</p>
-    </section>
+    <footer class="footer">
+      <span>made with <span class="heart">♥</span> and a little bit of courage</span>
+      <span class="footer-contact">Wanna reach out to us? 💌 <a href="mailto:contactussiteinfotechdesk@gmail.com">Send us an email</a></span>
+      <span class="footer-copyright">© 2026 Life of Lohibv. All rights reserved.</span>
+    </footer>
   </main>
 
   <div class="modal-backdrop" id="linkModal" hidden>
