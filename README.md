@@ -4,7 +4,7 @@ A cute, responsive Valentine-style question page inspired by the supplied refere
 
 ## Features
 - Personalised question using the `?to=Name` URL parameter (defaults to “Hey girl” for bulk sharing).
-- One playful No button that roams the viewport, dodges attempts, and occasionally hides behind Yes, plus a celebratory Yes screen.
+- One cursor-reactive No button that dodges as the pointer approaches, roams the viewport, and occasionally hides behind Yes. Every failed chase makes Yes grow, followed by a celebratory Yes screen.
 - Animated bear artwork, floating hearts, and confetti.
 - Share support and a form to generate a personalised share link.
 - Responsive styling and reduced-motion support.
