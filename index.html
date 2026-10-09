@@ -370,7 +370,6 @@
       let failedAttempts = 0;
       let lastDodgeAt = 0;
       let lastProximityDodgeAt = 0;
-      let wanderTimer = null;
       let noIsHiddenBehindYes = false;
       let lastPointerX = null;
       let lastPointerY = null;
@@ -465,13 +464,13 @@
         lastPointerY = event.clientY;
         if (successCard.hidden === false || noButton.hidden || noIsHiddenBehindYes) return;
 
-        // Dodge as the pointer approaches, even before it touches the button.
+        // Stay perfectly still until the cursor gets very close to the button.
         const rect = noButton.getBoundingClientRect();
         const dx = Math.max(rect.left - event.clientX, 0, event.clientX - rect.right);
         const dy = Math.max(rect.top - event.clientY, 0, event.clientY - rect.bottom);
-        if (Math.hypot(dx, dy) < 135) {
+        if (Math.hypot(dx, dy) < 42) {
           const now = performance.now();
-          if (now - lastProximityDodgeAt > 320) {
+          if (now - lastProximityDodgeAt > 180) {
             lastProximityDodgeAt = now;
             moveNoButton(true);
           }
@@ -503,23 +502,12 @@
         moveNoButton(true);
       });
 
-      function startWandering() {
-        if (wanderTimer) window.clearInterval(wanderTimer);
-        wanderTimer = window.setInterval(function () {
-          if (!document.hidden && successCard.hidden) moveNoButton(false);
-        }, 1900);
-      }
-
-      // Start close to Yes, then let No roam the whole viewport.
+      // Start beside Yes and stay still until the cursor approaches.
       function placeNoNearYes() {
         const rect = yesButton.getBoundingClientRect();
         setNoPosition(rect.left - noButton.offsetWidth - 14, rect.top + rect.height / 2 - noButton.offsetHeight / 2);
       }
       placeNoNearYes();
-      window.setTimeout(function () {
-        moveNoButton(false);
-        startWandering();
-      }, 1100);
 
       window.addEventListener('resize', function () {
         setNoPosition(parseFloat(noButton.style.left) || 8, parseFloat(noButton.style.top) || 8);
@@ -530,7 +518,6 @@
         questionCard.hidden = true;
         successCard.hidden = false;
         noButton.hidden = true;
-        if (wanderTimer) window.clearInterval(wanderTimer);
         document.title = 'Yayy! 💕';
         launchConfetti();
       }
