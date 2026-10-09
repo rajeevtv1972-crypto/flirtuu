@@ -588,24 +588,87 @@
         }
       }
 
+      // Create a short, masked-looking share URL using the is.gd URL shortener.
+      // This shortens the visible URL; it does not make the destination secret.
+      let shortLinkRequestId = 0;
+      function shortenShareUrl(longUrl) {
+        return new Promise(function (resolve, reject) {
+          const callbackName = '__lifeOfLohibvShorten' + (++shortLinkRequestId) + '_' + Date.now();
+          const script = document.createElement('script');
+          let settled = false;
+          let timeoutId;
+
+          function finish(error, shortUrl) {
+            if (settled) return;
+            settled = true;
+            if (timeoutId) window.clearTimeout(timeoutId);
+            script.remove();
+            try { delete window[callbackName]; } catch (cleanupError) {}
+            if (error) reject(error);
+            else resolve(shortUrl);
+          }
+
+          window[callbackName] = function (result) {
+            if (result && typeof result.shorturl === 'string' && /^https:\/\/is\.gd\//i.test(result.shorturl)) {
+              finish(null, result.shorturl);
+            } else {
+              finish(new Error((result && result.errormessage) || 'Could not create a short link.'));
+            }
+          };
+
+          const endpoint = new URL('https://is.gd/create.php');
+          endpoint.searchParams.set('format', 'json');
+          endpoint.searchParams.set('callback', callbackName);
+          endpoint.searchParams.set('url', longUrl);
+          script.onerror = function () { finish(new Error('The short-link service could not be reached.')); };
+          timeoutId = window.setTimeout(function () {
+            finish(new Error('The short-link request timed out.'));
+          }, 12000);
+          script.src = endpoint.toString();
+          document.head.appendChild(script);
+        });
+      }
+
+      async function getShareLink(longUrl) {
+        try {
+          return { url: await shortenShareUrl(longUrl), shortened: true };
+        } catch (error) {
+          console.warn('Short link unavailable; using the original URL.', error);
+          return { url: longUrl, shortened: false };
+        }
+      }
+
       shareButton.addEventListener('click', async function () {
-        const shareData = {
-          title: 'A little question for you 💗',
-          text: 'I made a little love-question page. Come see it! 💕',
-          url: window.location.href
-        };
+        const originalUrl = window.location.href;
+        shareButton.disabled = true;
+        shareMessage.textContent = 'Making a short share link… 💌';
+        const shareLink = await getShareLink(originalUrl);
+        const copiedMessage = shareLink.shortened
+          ? 'Short link copied! Send it to your friends 💌'
+          : 'Short link unavailable; copied the full link 💗';
         try {
           if (navigator.share) {
-            await navigator.share(shareData);
-            shareMessage.textContent = 'Shared with love 💗';
+            await navigator.share({
+              title: 'A little question for you 💗',
+              text: 'I made a little love-question page. Come see it! 💕',
+              url: shareLink.url
+            });
+            shareMessage.textContent = shareLink.shortened
+              ? 'Your masked share link is ready! 💗'
+              : 'Short link unavailable; shared the original link 💗';
           } else if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(window.location.href);
-            shareMessage.textContent = 'Link copied! Send it to your friends 💌';
+            await navigator.clipboard.writeText(shareLink.url);
+            shareMessage.textContent = copiedMessage;
           } else {
-            showCopyFallback(window.location.href);
+            showCopyFallback(shareLink.url);
+            if (!shareLink.shortened) {
+              shareMessage.textContent = 'Short link unavailable; copy the full link from your browser 💗';
+            }
           }
         } catch (error) {
-          if (error && error.name !== 'AbortError') showCopyFallback(window.location.href);
+          if (error && error.name !== 'AbortError') showCopyFallback(shareLink.url);
+        } finally {
+          shareButton.disabled = false;
         }
       });
 
@@ -639,23 +702,47 @@
         event.preventDefault();
         const name = nameInput.value.trim();
         if (!name) { nameInput.focus(); return; }
+
         const link = new URL(window.location.href);
         link.searchParams.set('to', name);
         link.hash = '';
+        const submitButton = nameForm.querySelector('button[type="submit"]');
+        if (submitButton) {
+          submitButton.disabled = true;
+          submitButton.textContent = 'Creating short link…';
+        }
+        const shareLink = await getShareLink(link.href);
         try {
           if (navigator.share) {
-            await navigator.share({ title: 'A little question for you 💗', text: 'I made a little question page just for you!', url: link.href });
+            await navigator.share({
+              title: 'A little question for you 💗',
+              text: 'I made a little question page just for you!',
+              url: shareLink.url
+            });
+            shareMessage.textContent = shareLink.shortened
+              ? 'Your masked personalised link is ready! 💌'
+              : 'Short link unavailable; your personalised link is ready without masking 💗';
           } else if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(link.href);
-            shareMessage.textContent = 'Your personalised link is copied! 💌';
+            await navigator.clipboard.writeText(shareLink.url);
+            shareMessage.textContent = shareLink.shortened
+              ? 'Your masked personalised link is copied! 💌'
+              : 'Short link unavailable; your full personalised link is copied 💗';
           } else {
-            showCopyFallback(link.href);
+            showCopyFallback(shareLink.url);
+            shareMessage.textContent = shareLink.shortened
+              ? 'Your masked personalised link is ready to copy! 💌'
+              : 'Short link unavailable; use your full personalised link 💗';
           }
           linkModal.hidden = true;
         } catch (error) {
           if (error && error.name !== 'AbortError') {
-            shareMessage.textContent = 'Your link is ready: ' + link.href;
+            shareMessage.textContent = 'Your link is ready: ' + shareLink.url;
             linkModal.hidden = true;
+          }
+        } finally {
+          if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Create link ✨';
           }
         }
       });
