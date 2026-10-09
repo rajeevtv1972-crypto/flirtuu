@@ -588,130 +588,28 @@
         }
       }
 
-      // Shorten links with is.gd first and v.gd as a backup.
-      // Both services document JSONP callbacks for cross-origin browser use.
-      let shortLinkRequestId = 0;
-
-      function requestShortUrl(domain, longUrl) {
-        return new Promise(function (resolve, reject) {
-          const callbackName = 'lifeOfLohibvShorten' + (++shortLinkRequestId) + Date.now();
-          const script = document.createElement('script');
-          let settled = false;
-          let timeoutId;
-
-          function finish(error, shortUrl) {
-            if (settled) return;
-            settled = true;
-            if (timeoutId) window.clearTimeout(timeoutId);
-            script.remove();
-            try { delete window[callbackName]; } catch (cleanupError) {}
-            if (error) reject(error);
-            else resolve(shortUrl);
-          }
-
-          window[callbackName] = function (result) {
-            const shortUrl = result && result.shorturl;
-            let validUrl = false;
-            try {
-              const parsed = new URL(shortUrl);
-              validUrl = parsed.protocol === 'https:' && parsed.hostname.toLowerCase() === domain;
-            } catch (error) {}
-
-            if (validUrl) {
-              finish(null, shortUrl);
-            } else {
-              finish(new Error((result && result.errormessage) || domain + ' returned an invalid response.'));
-            }
-          };
-
-          const endpoint = new URL('https://' + domain + '/create.php');
-          endpoint.searchParams.set('format', 'json');
-          endpoint.searchParams.set('callback', callbackName);
-          endpoint.searchParams.set('url', longUrl);
-          script.onerror = function () {
-            finish(new Error(domain + ' could not be reached from this browser.'));
-          };
-          timeoutId = window.setTimeout(function () {
-            finish(new Error(domain + ' did not respond in time.'));
-          }, 8000);
-          script.src = endpoint.toString();
-          document.head.appendChild(script);
-        });
-      }
-
-      async function shortenShareUrl(longUrl) {
-        try {
-          return await requestShortUrl('is.gd', longUrl);
-        } catch (primaryError) {
-          try {
-            return await requestShortUrl('v.gd', longUrl);
-          } catch (backupError) {
-            const primaryMessage = primaryError && primaryError.message
-              ? primaryError.message
-              : 'is.gd request failed';
-            const backupMessage = backupError && backupError.message
-              ? backupError.message
-              : 'v.gd request failed';
-            throw new Error(primaryMessage + ' Backup also failed: ' + backupMessage);
-          }
-        }
-      }
-
-      const shortLinkCache = new Map();
-      const shortLinkRequests = new Map();
-
-      function getShareLink(longUrl) {
-        // Reuse created links so repeat shares don't consume the shortener's rate limit.
-        if (shortLinkCache.has(longUrl)) {
-          return Promise.resolve({ url: shortLinkCache.get(longUrl), shortened: true });
-        }
-        if (shortLinkRequests.has(longUrl)) return shortLinkRequests.get(longUrl);
-
-        const request = shortenShareUrl(longUrl).then(function (shortUrl) {
-          shortLinkCache.set(longUrl, shortUrl);
-          return { url: shortUrl, shortened: true };
-        }).finally(function () {
-          shortLinkRequests.delete(longUrl);
-        });
-
-        shortLinkRequests.set(longUrl, request);
-        return request;
-      }
-
       shareButton.addEventListener('click', async function () {
+        const pageUrl = window.location.href;
         shareButton.disabled = true;
-        shareMessage.textContent = 'Creating your short link automatically… 💌';
-        let shortUrl = '';
-
-        try {
-          const shareLink = await getShareLink(window.location.href);
-          shortUrl = shareLink.url;
-        } catch (error) {
-          console.warn('Short-link creation failed.', error);
-          shareMessage.textContent = 'Could not create a short link, so nothing was shared. ' + (error && error.message ? error.message : 'Please try again shortly.') + ' 💗';
-          shareButton.disabled = false;
-          return;
-        }
-
         try {
           if (navigator.share) {
             await navigator.share({
               title: 'A little question for you 💗',
               text: 'I made a little love-question page. Come see it! 💕',
-              url: shortUrl
+              url: pageUrl
             });
-            shareMessage.textContent = 'Short link shared! 💌 ' + shortUrl;
+            shareMessage.textContent = 'Shared with love 💗';
           } else if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(shortUrl);
-            shareMessage.textContent = 'Short link copied! Send it to your friends 💌 ' + shortUrl;
+            await navigator.clipboard.writeText(pageUrl);
+            shareMessage.textContent = 'Link copied! Send it to your friends 💌';
           } else {
-            showCopyFallback(shortUrl);
+            showCopyFallback(pageUrl);
           }
         } catch (error) {
           if (error && error.name === 'AbortError') {
-            shareMessage.textContent = 'Short link created—sharing was cancelled. You can still copy it: ' + shortUrl;
+            shareMessage.textContent = 'Sharing cancelled. You can still copy the page link 💗';
           } else {
-            showCopyFallback(shortUrl);
+            showCopyFallback(pageUrl);
           }
         } finally {
           shareButton.disabled = false;
@@ -729,7 +627,9 @@
         let copied = false;
         try { copied = document.execCommand('copy'); } catch (error) {}
         area.remove();
-        shareMessage.textContent = copied ? 'Short link copied! Send it to your friends 💌' : 'Short link is ready: ' + text;
+        shareMessage.textContent = copied
+          ? 'Link copied! Send it to your friends 💌'
+          : 'Copy this page link from your browser: ' + text;
       }
 
       makeLinkButton.addEventListener('click', function () {
@@ -752,24 +652,12 @@
         const link = new URL(window.location.href);
         link.searchParams.set('to', name);
         link.hash = '';
+        const personalisedUrl = link.href;
         const submitButton = nameForm.querySelector('button[type="submit"]');
+
         if (submitButton) {
           submitButton.disabled = true;
-          submitButton.textContent = 'Creating short link…';
-        }
-
-        let shortUrl = '';
-        try {
-          const shareLink = await getShareLink(link.href);
-          shortUrl = shareLink.url;
-        } catch (error) {
-          console.warn('Personalised short-link creation failed.', error);
-          shareMessage.textContent = 'Could not create your short link. ' + (error && error.message ? error.message : 'Please try again shortly.') + ' 💗';
-          if (submitButton) {
-            submitButton.disabled = false;
-            submitButton.textContent = 'Create link ✨';
-          }
-          return;
+          submitButton.textContent = 'Preparing link…';
         }
 
         try {
@@ -777,21 +665,21 @@
             await navigator.share({
               title: 'A little question for you 💗',
               text: 'I made a little question page just for you!',
-              url: shortUrl
+              url: personalisedUrl
             });
-            shareMessage.textContent = 'Your personalised short link is ready! 💌 ' + shortUrl;
+            shareMessage.textContent = 'Your personalised link is ready! 💌';
           } else if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(shortUrl);
-            shareMessage.textContent = 'Your personalised short link is copied! 💌 ' + shortUrl;
+            await navigator.clipboard.writeText(personalisedUrl);
+            shareMessage.textContent = 'Your personalised link is copied! 💌';
           } else {
-            showCopyFallback(shortUrl);
+            showCopyFallback(personalisedUrl);
           }
           linkModal.hidden = true;
         } catch (error) {
           if (error && error.name === 'AbortError') {
-            shareMessage.textContent = 'Your personalised short link is ready to copy: ' + shortUrl;
+            shareMessage.textContent = 'Your personalised link is ready to copy 💗';
           } else {
-            showCopyFallback(shortUrl);
+            showCopyFallback(personalisedUrl);
           }
         } finally {
           if (submitButton) {
