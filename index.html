@@ -210,8 +210,8 @@
     }
     .party-art:before { top: 12px; left: -4px; }
     .party-art:after { bottom: 8px; right: -4px; animation-direction: reverse; }
-    .dancing-bear { width: 70%; max-width: 225px; filter: drop-shadow(0 10px 7px rgba(139, 26, 76, .14)); animation: dance 1.7s ease-in-out infinite; }
-    .heart-float { position: absolute; font-size: 27px; animation: float-up 3.5s ease-in infinite; }
+    .dancing-bear-gif { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .heart-float { position: absolute; z-index: 2; font-size: 27px; animation: float-up 3.5s ease-in infinite; pointer-events: none; }
     .heart-float.a { left: 12%; bottom: 13%; animation-delay: -.8s; }
     .heart-float.b { right: 12%; top: 20%; animation-delay: -2.2s; }
     .heart-float.c { right: 17%; bottom: 12%; font-size: 19px; animation-delay: -1.4s; }
@@ -315,28 +315,7 @@
         <span class="heart-float a" aria-hidden="true">💗</span>
         <span class="heart-float b" aria-hidden="true">💖</span>
         <span class="heart-float c" aria-hidden="true">💕</span>
-        <svg class="dancing-bear" viewBox="0 0 240 230" role="img" aria-label="Happy pink bear">
-          <g stroke="#75374d" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M57 128 Q25 112 32 83 Q39 64 54 88 L76 111" fill="#d95e91"/>
-            <path d="M178 115 Q213 99 213 72 Q210 53 197 78 L164 106" fill="#d95e91"/>
-            <path d="M76 168 Q59 190 53 202 Q49 216 78 216 L105 216 Q115 212 105 196 L104 165" fill="#d95e91"/>
-            <path d="M146 165 L145 195 Q132 215 151 216 L182 216 Q206 214 190 197 L166 164" fill="#d95e91"/>
-            <circle cx="69" cy="61" r="27" fill="#ef8bb6"/>
-            <circle cx="171" cy="61" r="27" fill="#ef8bb6"/>
-            <circle cx="120" cy="111" r="70" fill="#f7a5c8"/>
-            <ellipse cx="120" cy="130" rx="44" ry="37" fill="#ffd8e8" stroke="none"/>
-            <ellipse cx="95" cy="103" rx="5.5" ry="7" fill="#4d2e3c" stroke="none"/>
-            <ellipse cx="145" cy="103" rx="5.5" ry="7" fill="#4d2e3c" stroke="none"/>
-            <ellipse cx="120" cy="120" rx="8" ry="6" fill="#6a3e4f" stroke="none"/>
-            <path d="M120 127 Q110 139 99 128 M120 127 Q130 139 141 128" fill="none"/>
-            <ellipse cx="88" cy="120" rx="10" ry="6" fill="#f07aa9" stroke="none" opacity=".8"/>
-            <ellipse cx="152" cy="120" rx="10" ry="6" fill="#f07aa9" stroke="none" opacity=".8"/>
-            <path d="M90 163 Q120 179 150 163" fill="none" stroke="#c44e80" stroke-width="4"/>
-          </g>
-          <path d="M119 79 C104 62 89 74 97 87 L119 106 L141 87 C151 73 134 62 119 79Z" fill="#e82e79"/>
-          <path d="M31 35 C20 22 8 32 14 43 L31 59 L48 43 C54 32 41 22 31 35Z" fill="#fff3fb"/>
-          <path d="M204 140 C193 127 181 137 187 148 L204 164 L221 148 C227 137 214 127 204 140Z" fill="#fff3fb"/>
-        </svg>
+        <img class="dancing-bear-gif" src="./assets/love-celebration.gif" alt="A cute brown bear and white cat hugging with floating hearts" width="320" height="256" decoding="async">
       </div>
       <div class="success-actions">
         <button class="btn secondary" type="button" id="shareButton">Share with Friends</button>
