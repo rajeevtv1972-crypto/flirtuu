@@ -211,13 +211,6 @@
     .party-art:before { top: 12px; left: -4px; }
     .party-art:after { bottom: 8px; right: -4px; animation-direction: reverse; }
     .dancing-bear-gif { display: block; width: 100%; height: 100%; object-fit: cover; }
-    .gif-sequence-caption {
-      margin: -8px auto 17px;
-      color: #9c6680;
-      font-size: 11px;
-      line-height: 1.4;
-      text-align: center;
-    }
     .heart-float { position: absolute; z-index: 2; font-size: 27px; animation: float-up 3.5s ease-in infinite; pointer-events: none; }
     .heart-float.a { left: 12%; bottom: 13%; animation-delay: -.8s; }
     .heart-float.b { right: 12%; top: 20%; animation-delay: -2.2s; }
@@ -324,7 +317,6 @@
         <span class="heart-float c" aria-hidden="true">💕</span>
         <img class="dancing-bear-gif" id="celebrationGif" src="https://media1.tenor.com/m/gVC_auLWNEkAAAAd/bear-love.gif" alt="A cute brown bear and white cat hugging with floating hearts" width="320" height="256" decoding="async">
       </div>
-      <p class="gif-sequence-caption" id="gifSequenceCaption" aria-live="polite">Bear hugs 💗 · 1 of 5</p>
       <div class="success-actions">
         <button class="btn secondary" type="button" id="shareButton">Share with Friends</button>
         <button class="btn primary" type="button" id="makeLinkButton">Make Your Own Link</button>
@@ -554,12 +546,10 @@
 
       function showCelebrationGif(index) {
         const image = document.getElementById('celebrationGif');
-        const caption = document.getElementById('gifSequenceCaption');
-        if (!image || !caption) return;
+        if (!image) return;
         const gif = celebrationGifs[index];
         image.src = gif.src;
         image.alt = gif.alt;
-        caption.textContent = gif.caption + ' · ' + (index + 1) + ' of ' + celebrationGifs.length;
       }
 
       function startGifSequence() {
