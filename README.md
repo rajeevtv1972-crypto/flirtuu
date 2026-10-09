@@ -13,7 +13,7 @@ A cute, responsive Valentine-style question page inspired by the supplied refere
 Open `index.html` in a browser. No build step or dependencies are needed.
 
 ## Deploy
-This is a static site. You can publish the repository root using GitHub Pages or Cloudflare Pages (no build command; output directory is the repository root).
+Publish the repository root on Cloudflare Pages (no build command; output directory is the repository root) to enable the same-site `functions/api/shorten.js` endpoint. That endpoint shortens links server-side and avoids browser cross-origin restrictions. GitHub Pages cannot run Cloudflare Pages Functions, so it relies on the browser-based API fallback instead.
 
 
 ## Contact
