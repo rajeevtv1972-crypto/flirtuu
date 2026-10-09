@@ -270,7 +270,7 @@
           </g>
         </svg>
       </div>
-      <h1 id="questionTitle"><span class="recipient" id="recipientName">Nirali</span>, will you be my girlfriend?</h1>
+      <h1 id="questionTitle"><span class="recipient" id="recipientName">Hey girl</span>, will you be my girlfriend?</h1>
       <p class="subtitle">I have a tiny question for you… and I’m hoping for a very big <b>YES</b> 💗</p>
       <div class="actions" id="questionActions">
         <button class="btn no" id="noButton" type="button">No 🙈</button>
@@ -351,10 +351,10 @@
       const nameInput = document.getElementById('nameInput');
       const cancelModal = document.getElementById('cancelModal');
       const params = new URLSearchParams(window.location.search);
-      const givenName = (params.get('to') || 'Nirali').trim().slice(0, 40);
-      recipientName.textContent = givenName || 'Nirali';
+      const givenName = (params.get('to') || 'Hey girl').trim().slice(0, 40);
+      recipientName.textContent = givenName || 'Hey girl';
       document.title = 'A little question for ' + (givenName || 'you') + ' 💗';
-      questionTitle.setAttribute('aria-label', (givenName || 'Nirali') + ', will you be my girlfriend?');
+      questionTitle.setAttribute('aria-label', (givenName || 'Hey girl') + ', will you be my girlfriend?');
 
       let noAttempts = 0;
       function moveNoButton() {
