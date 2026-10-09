@@ -588,12 +588,13 @@
         }
       }
 
-      // Create a short, masked-looking share URL using the is.gd URL shortener.
-      // This shortens the visible URL; it does not make the destination secret.
+      // Shorten links with is.gd first and v.gd as a backup.
+      // Both services document JSONP callbacks for cross-origin browser use.
       let shortLinkRequestId = 0;
-      function shortenShareUrl(longUrl) {
+
+      function requestShortUrl(domain, longUrl) {
         return new Promise(function (resolve, reject) {
-          const callbackName = '__lifeOfLohibvShorten' + (++shortLinkRequestId) + '_' + Date.now();
+          const callbackName = 'lifeOfLohibvShorten' + (++shortLinkRequestId) + Date.now();
           const script = document.createElement('script');
           let settled = false;
           let timeoutId;
@@ -609,24 +610,51 @@
           }
 
           window[callbackName] = function (result) {
-            if (result && typeof result.shorturl === 'string' && /^https:\/\/is\.gd\//i.test(result.shorturl)) {
-              finish(null, result.shorturl);
+            const shortUrl = result && result.shorturl;
+            let validUrl = false;
+            try {
+              const parsed = new URL(shortUrl);
+              validUrl = parsed.protocol === 'https:' && parsed.hostname.toLowerCase() === domain;
+            } catch (error) {}
+
+            if (validUrl) {
+              finish(null, shortUrl);
             } else {
-              finish(new Error((result && result.errormessage) || 'Could not create a short link.'));
+              finish(new Error((result && result.errormessage) || domain + ' returned an invalid response.'));
             }
           };
 
-          const endpoint = new URL('https://is.gd/create.php');
+          const endpoint = new URL('https://' + domain + '/create.php');
           endpoint.searchParams.set('format', 'json');
           endpoint.searchParams.set('callback', callbackName);
           endpoint.searchParams.set('url', longUrl);
-          script.onerror = function () { finish(new Error('The short-link service could not be reached.')); };
+          script.onerror = function () {
+            finish(new Error(domain + ' could not be reached from this browser.'));
+          };
           timeoutId = window.setTimeout(function () {
-            finish(new Error('The short-link request timed out.'));
-          }, 12000);
+            finish(new Error(domain + ' did not respond in time.'));
+          }, 8000);
           script.src = endpoint.toString();
           document.head.appendChild(script);
         });
+      }
+
+      async function shortenShareUrl(longUrl) {
+        try {
+          return await requestShortUrl('is.gd', longUrl);
+        } catch (primaryError) {
+          try {
+            return await requestShortUrl('v.gd', longUrl);
+          } catch (backupError) {
+            const primaryMessage = primaryError && primaryError.message
+              ? primaryError.message
+              : 'is.gd request failed';
+            const backupMessage = backupError && backupError.message
+              ? backupError.message
+              : 'v.gd request failed';
+            throw new Error(primaryMessage + ' Backup also failed: ' + backupMessage);
+          }
+        }
       }
 
       const shortLinkCache = new Map();
@@ -660,7 +688,7 @@
           shortUrl = shareLink.url;
         } catch (error) {
           console.warn('Short-link creation failed.', error);
-          shareMessage.textContent = 'Could not create a short link right now. Nothing was shared—please try again shortly 💗';
+          shareMessage.textContent = 'Could not create a short link, so nothing was shared. ' + (error && error.message ? error.message : 'Please try again shortly.') + ' 💗';
           shareButton.disabled = false;
           return;
         }
@@ -736,7 +764,7 @@
           shortUrl = shareLink.url;
         } catch (error) {
           console.warn('Personalised short-link creation failed.', error);
-          shareMessage.textContent = 'Could not create your short link right now. Please try again shortly 💗';
+          shareMessage.textContent = 'Could not create your short link. ' + (error && error.message ? error.message : 'Please try again shortly.') + ' 💗';
           if (submitButton) {
             submitButton.disabled = false;
             submitButton.textContent = 'Create link ✨';
