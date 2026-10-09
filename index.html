@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fff8fb">
+  <meta name="description" content="A tiny question, made with a whole lot of love.">
+  <meta property="og:title" content="A little question for you 💗">
+  <meta property="og:description" content="Someone has a very important question to ask you...">
+  <title>A little question for you 💗</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <style>
+    :root {
+      --ink: #29252d;
+      --pink: #e92e79;
+      --pink-dark: #cb1d63;
+      --mint: #dcf8ec;
+      --mint-deep: #bfeeda;
+      --paper: #fff8fb;
+      --muted: #786c78;
+      --shadow: 0 22px 70px rgba(179, 74, 119, .14);
+    }
+    * { box-sizing: border-box; }
+    html { min-height: 100%; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 28px 16px 22px;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 18%, rgba(255, 199, 220, .45) 0 2px, transparent 3px),
+        radial-gradient(circle at 88% 77%, rgba(187, 237, 216, .65) 0 3px, transparent 4px),
+        linear-gradient(145deg, #fffafc 0%, #fff3f8 54%, #f8fff9 100%);
+      background-size: 36px 36px, 48px 48px, auto;
+      font-family: ui-rounded, "SF Pro Rounded", "Nunito", "Trebuchet MS", system-ui, sans-serif;
+      overflow-x: hidden;
+    }
+    button, input { font: inherit; }
+    button { -webkit-tap-highlight-color: transparent; }
+    .scene {
+      width: min(100%, 500px);
+      position: relative;
+      isolation: isolate;
+      animation: arrive .7s cubic-bezier(.2,.8,.2,1) both;
+    }
+    .sparkle {
+      position: absolute;
+      z-index: -1;
+      color: #f09abc;
+      user-select: none;
+      animation: bob 3.8s ease-in-out infinite;
+      filter: drop-shadow(0 5px 7px rgba(230, 66, 129, .12));
+    }
+    .sparkle.one { top: 3%; left: -5%; font-size: 28px; }
+    .sparkle.two { top: 14%; right: -2%; font-size: 22px; animation-delay: -1s; }
+    .sparkle.three { bottom: 13%; left: -4%; font-size: 20px; animation-delay: -2s; }
+    .sparkle.four { bottom: 4%; right: -4%; font-size: 30px; animation-delay: -.5s; }
+    .card {
+      position: relative;
+      padding: 34px 32px 25px;
+      border: 1px solid rgba(255,255,255,.92);
+      border-radius: 30px;
+      background: linear-gradient(155deg, #e8fff3 0%, var(--mint) 55%, #e6fbf1 100%);
+      box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.8);
+      text-align: center;
+      overflow: hidden;
+    }
+    .card:before {
+      content: "";
+      position: absolute;
+      width: 230px; height: 230px;
+      right: -135px; top: -140px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.44);
+      pointer-events: none;
+    }
+    .mascot {
+      width: 144px;
+      height: 125px;
+      margin: 0 auto 10px;
+      display: grid;
+      place-items: center;
+      position: relative;
+      animation: bob 3.1s ease-in-out infinite;
+    }
+    .mascot svg { width: 100%; height: 100%; overflow: visible; }
+    h1 {
+      margin: 8px 0 10px;
+      font-size: clamp(25px, 6vw, 31px);
+      line-height: 1.18;
+      letter-spacing: -.85px;
+      font-weight: 850;
+    }
+    .recipient { color: var(--pink-dark); }
+    .subtitle {
+      max-width: 330px;
+      margin: 0 auto;
+      color: #776b77;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+    .actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 13px;
+      margin: 23px auto 8px;
+      min-height: 48px;
+      position: relative;
+    }
+    .btn {
+      min-width: 110px;
+      min-height: 43px;
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 24px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 800;
+      transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+    }
+    .btn:focus-visible, input:focus-visible { outline: 3px solid #ed76a8; outline-offset: 3px; }
+    .btn:active { transform: scale(.97); }
+    .yes, .primary {
+      color: white;
+      background: linear-gradient(135deg, #f33c8b, var(--pink-dark));
+      box-shadow: 0 7px 16px rgba(220, 39, 111, .24);
+    }
+    .yes:hover, .primary:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(220, 39, 111, .28); }
+    .no {
+      color: #655762;
+      background: rgba(255,255,255,.64);
+      border: 1px solid rgba(205, 183, 197, .58);
+      box-shadow: 0 3px 10px rgba(112, 73, 92, .04);
+      min-width: 82px;
+      padding-inline: 18px;
+      transition: left .16s ease, top .16s ease, transform .18s ease;
+    }
+    .no.running { position: absolute; z-index: 5; }
+    .tiny-note { margin: 12px 0 0; color: #b36487; font-size: 11px; }
+    .footer {
+      text-align: center;
+      margin: 17px auto 0;
+      padding: 0 10px;
+      color: #a78a9b;
+      font-size: 10px;
+      letter-spacing: .12px;
+    }
+    .footer .heart { color: #e74c8a; }
+    [hidden] { display: none !important; }
+    /* The happy ending */
+    .success-card { padding-top: 26px; }
+    .success-title {
+      color: #cf286b;
+      font-size: clamp(25px, 6vw, 30px);
+      letter-spacing: -.6px;
+      margin-top: 3px;
+    }
+    .success-subtitle { color: #756673; margin-bottom: 19px; }
+    .party-art {
+      width: min(100%, 310px);
+      aspect-ratio: 1 / .83;
+      margin: 0 auto 19px;
+      border-radius: 21px;
+      display: grid;
+      place-items: center;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(145deg,#ffb9d9,#ff7eb8 58%,#f35b9c);
+      box-shadow: 0 7px 20px rgba(232, 51, 125, .14);
+    }
+    .party-art:before, .party-art:after {
+      content: "♥  ✦  ♥";
+      white-space: nowrap;
+      position: absolute;
+      color: rgba(255,255,255,.65);
+      font-size: 24px;
+      letter-spacing: 13px;
+      animation: drift 8s linear infinite;
+    }
+    .party-art:before { top: 12px; left: -4px; }
+    .party-art:after { bottom: 8px; right: -4px; animation-direction: reverse; }
+    .dancing-bear { width: 70%; max-width: 225px; filter: drop-shadow(0 10px 7px rgba(139, 26, 76, .14)); animation: dance 1.7s ease-in-out infinite; }
+    .heart-float { position: absolute; font-size: 27px; animation: float-up 3.5s ease-in infinite; }
+    .heart-float.a { left: 12%; bottom: 13%; animation-delay: -.8s; }
+    .heart-float.b { right: 12%; top: 20%; animation-delay: -2.2s; }
+    .heart-float.c { right: 17%; bottom: 12%; font-size: 19px; animation-delay: -1.4s; }
+    .success-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .success-actions .btn { min-width: 0; padding: 12px 10px; font-size: 12px; }
+    .secondary { color: #fff; background: #d81f69; box-shadow: 0 6px 14px rgba(220,39,111,.19); }
+    .secondary:hover { background: #bf1658; transform: translateY(-2px); }
+    .message { min-height: 16px; font-size: 11px; color: #a33f70; margin: 12px 0 0; }
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 20;
+      display: grid; place-items: center;
+      padding: 18px;
+      background: rgba(50, 25, 42, .38);
+      backdrop-filter: blur(7px);
+    }
+    .modal {
+      width: min(100%, 380px);
+      border-radius: 24px;
+      padding: 27px 24px 23px;
+      background: #fffafb;
+      box-shadow: 0 20px 70px rgba(54, 23, 42, .23);
+      text-align: center;
+    }
+    .modal h2 { margin: 0 0 8px; font-size: 23px; }
+    .modal p { margin: 0 0 18px; color: #827281; font-size: 13px; line-height: 1.5; }
+    .modal input {
+      width: 100%; padding: 13px 15px;
+      border: 1px solid #f0c3d6; border-radius: 12px;
+      background: #fff; color: var(--ink); margin-bottom: 13px;
+      outline-color: var(--pink);
+    }
+    .modal-actions { display: flex; gap: 10px; }
+    .modal-actions .btn { flex: 1; min-width: 0; }
+    .cancel { background: #f7edf2; color: #715a69; }
+    .confetti {
+      position: fixed; z-index: 30; top: -20px; width: 9px; height: 13px;
+      border-radius: 3px; pointer-events: none;
+      animation: confetti-fall 2.8s linear forwards;
+    }
+    @keyframes arrive { from { opacity: 0; transform: translateY(12px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes bob { 0%,100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-7px) rotate(1deg); } }
+    @keyframes dance { 0%,100% { transform: rotate(-5deg) translateY(0) scale(1); } 25% { transform: rotate(4deg) translateY(-5px) scale(1.02); } 50% { transform: rotate(-3deg) translateY(0) scale(1); } 75% { transform: rotate(5deg) translateY(-4px) scale(1.02); } }
+    @keyframes drift { from { transform: translateX(-20px); } to { transform: translateX(25px); } }
+    @keyframes float-up { 0% { transform: translateY(15px) scale(.75) rotate(-8deg); opacity: 0; } 25% { opacity: 1; } 100% { transform: translateY(-60px) scale(1.12) rotate(12deg); opacity: 0; } }
+    @keyframes confetti-fall { to { transform: translate3d(var(--drift), 110vh, 0) rotate(680deg); opacity: .15; } }
+    @media (max-width: 420px) {
+      body { padding: 18px 12px 16px; }
+      .card { padding: 27px 19px 22px; border-radius: 25px; }
+      .mascot { width: 126px; height: 111px; }
+      .actions { gap: 9px; margin-top: 20px; }
+      .btn { padding: 11px 20px; }
+      .success-actions { grid-template-columns: 1fr 1fr; }
+      .sparkle.one { left: -2%; } .sparkle.two { right: -1%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="scene">
+    <span class="sparkle one" aria-hidden="true">✦</span>
+    <span class="sparkle two" aria-hidden="true">♡</span>
+    <span class="sparkle three" aria-hidden="true">✧</span>
+    <span class="sparkle four" aria-hidden="true">♥</span>
+
+    <section class="card" id="questionCard" aria-labelledby="questionTitle">
+      <div class="mascot" aria-hidden="true">
+        <svg viewBox="0 0 170 145" role="img" aria-label="A cute little bear with a heart">
+          <g transform="translate(6 9)">
+            <path d="M120 28 C109 12 126 -2 139 8 C149 16 140 29 120 39 C99 27 96 14 108 8 C116 4 123 14 120 28Z" fill="#f23886" transform="rotate(12 121 21)"/>
+            <ellipse cx="85" cy="85" rx="51" ry="45" fill="#f4b66b"/>
+            <circle cx="47" cy="45" r="20" fill="#e99c50"/>
+            <circle cx="123" cy="45" r="20" fill="#e99c50"/>
+            <circle cx="47" cy="45" r="10" fill="#f8cb8d"/>
+            <circle cx="123" cy="45" r="10" fill="#f8cb8d"/>
+            <ellipse cx="85" cy="91" rx="34" ry="29" fill="#ffd79f"/>
+            <ellipse cx="69" cy="77" rx="4" ry="5.2" fill="#49363b"/>
+            <ellipse cx="101" cy="77" rx="4" ry="5.2" fill="#49363b"/>
+            <ellipse cx="85" cy="89" rx="6" ry="4.5" fill="#674047"/>
+            <path d="M85 93 Q79 101 73 95 M85 93 Q91 101 97 95" fill="none" stroke="#674047" stroke-width="2.4" stroke-linecap="round"/>
+            <ellipse cx="58" cy="91" rx="8" ry="4.5" fill="#f49b9d" opacity=".75"/>
+            <ellipse cx="112" cy="91" rx="8" ry="4.5" fill="#f49b9d" opacity=".75"/>
+          </g>
+        </svg>
+      </div>
+      <h1 id="questionTitle"><span class="recipient" id="recipientName">Nirali</span>, will you be my girlfriend?</h1>
+      <p class="subtitle">I have a tiny question for you… and I’m hoping for a very big <b>YES</b> 💗</p>
+      <div class="actions" id="questionActions">
+        <button class="btn no" id="noButton" type="button">No 🙈</button>
+        <button class="btn yes" id="yesButton" type="button">Yes! 💖</button>
+      </div>
+      <p class="tiny-note" id="tinyNote">psst… there’s only one right answer 😉</p>
+    </section>
+
+    <section class="card success-card" id="successCard" hidden aria-labelledby="successTitle">
+      <h1 class="success-title" id="successTitle">Yayy! You said YES! 💕</h1>
+      <p class="subtitle success-subtitle">Knew you’d say yes <span aria-hidden="true">🥹</span></p>
+      <div class="party-art" aria-label="A little bear celebrating with hearts" role="img">
+        <span class="heart-float a" aria-hidden="true">💗</span>
+        <span class="heart-float b" aria-hidden="true">💖</span>
+        <span class="heart-float c" aria-hidden="true">💕</span>
+        <svg class="dancing-bear" viewBox="0 0 240 230" role="img" aria-label="Happy pink bear">
+          <g stroke="#75374d" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M57 128 Q25 112 32 83 Q39 64 54 88 L76 111" fill="#d95e91"/>
+            <path d="M178 115 Q213 99 213 72 Q210 53 197 78 L164 106" fill="#d95e91"/>
+            <path d="M76 168 Q59 190 53 202 Q49 216 78 216 L105 216 Q115 212 105 196 L104 165" fill="#d95e91"/>
+            <path d="M146 165 L145 195 Q132 215 151 216 L182 216 Q206 214 190 197 L166 164" fill="#d95e91"/>
+            <circle cx="69" cy="61" r="27" fill="#ef8bb6"/>
+            <circle cx="171" cy="61" r="27" fill="#ef8bb6"/>
+            <circle cx="120" cy="111" r="70" fill="#f7a5c8"/>
+            <ellipse cx="120" cy="130" rx="44" ry="37" fill="#ffd8e8" stroke="none"/>
+            <ellipse cx="95" cy="103" rx="5.5" ry="7" fill="#4d2e3c" stroke="none"/>
+            <ellipse cx="145" cy="103" rx="5.5" ry="7" fill="#4d2e3c" stroke="none"/>
+            <ellipse cx="120" cy="120" rx="8" ry="6" fill="#6a3e4f" stroke="none"/>
+            <path d="M120 127 Q110 139 99 128 M120 127 Q130 139 141 128" fill="none"/>
+            <ellipse cx="88" cy="120" rx="10" ry="6" fill="#f07aa9" stroke="none" opacity=".8"/>
+            <ellipse cx="152" cy="120" rx="10" ry="6" fill="#f07aa9" stroke="none" opacity=".8"/>
+            <path d="M90 163 Q120 179 150 163" fill="none" stroke="#c44e80" stroke-width="4"/>
+          </g>
+          <path d="M119 79 C104 62 89 74 97 87 L119 106 L141 87 C151 73 134 62 119 79Z" fill="#e82e79"/>
+          <path d="M31 35 C20 22 8 32 14 43 L31 59 L48 43 C54 32 41 22 31 35Z" fill="#fff3fb"/>
+          <path d="M204 140 C193 127 181 137 187 148 L204 164 L221 148 C227 137 214 127 204 140Z" fill="#fff3fb"/>
+        </svg>
+      </div>
+      <div class="success-actions">
+        <button class="btn secondary" type="button" id="shareButton">Share with Friends</button>
+        <button class="btn primary" type="button" id="makeLinkButton">Make Your Own Link</button>
+      </div>
+      <p class="message" id="shareMessage" aria-live="polite"></p>
+    </section>
+
+    <footer class="footer">made with <span class="heart">♥</span> and a little bit of courage</footer>
+  </main>
+
+  <div class="modal-backdrop" id="linkModal" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <h2 id="modalTitle">Make your own link 💌</h2>
+      <p>Who’s the lucky person? Add their name and create a personalised version to share.</p>
+      <form id="nameForm">
+        <input id="nameInput" maxlength="40" autocomplete="off" placeholder="Their name (e.g. Alex)" aria-label="Their name" required>
+        <div class="modal-actions">
+          <button class="btn cancel" type="button" id="cancelModal">Cancel</button>
+          <button class="btn primary" type="submit">Create link ✨</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <script>
+    (function () {
+      const questionCard = document.getElementById('questionCard');
+      const successCard = document.getElementById('successCard');
+      const recipientName = document.getElementById('recipientName');
+      const questionTitle = document.getElementById('questionTitle');
+      const noButton = document.getElementById('noButton');
+      const yesButton = document.getElementById('yesButton');
+      const questionActions = document.getElementById('questionActions');
+      const tinyNote = document.getElementById('tinyNote');
+      const shareButton = document.getElementById('shareButton');
+      const makeLinkButton = document.getElementById('makeLinkButton');
+      const shareMessage = document.getElementById('shareMessage');
+      const linkModal = document.getElementById('linkModal');
+      const nameForm = document.getElementById('nameForm');
+      const nameInput = document.getElementById('nameInput');
+      const cancelModal = document.getElementById('cancelModal');
+      const params = new URLSearchParams(window.location.search);
+      const givenName = (params.get('to') || 'Nirali').trim().slice(0, 40);
+      recipientName.textContent = givenName || 'Nirali';
+      document.title = 'A little question for ' + (givenName || 'you') + ' 💗';
+      questionTitle.setAttribute('aria-label', (givenName || 'Nirali') + ', will you be my girlfriend?');
+
+      let noAttempts = 0;
+      function moveNoButton() {
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        noAttempts += 1;
+        const card = questionCard.getBoundingClientRect();
+        const button = noButton.getBoundingClientRect();
+        const maxLeft = Math.max(0, card.width - button.width - 28);
+        const left = 12 + Math.random() * Math.max(0, maxLeft - 12);
+        const top = 218 + Math.random() * 76;
+        noButton.classList.add('running');
+        noButton.style.left = Math.min(left, maxLeft) + 'px';
+        noButton.style.top = Math.min(top, Math.max(215, card.height - 82)) + 'px';
+        tinyNote.textContent = noAttempts > 2 ? 'hehe, you have to catch me first 😜' : 'are you sure? give that YES a chance 💕';
+      }
+      noButton.addEventListener('pointerenter', moveNoButton);
+      noButton.addEventListener('click', function () {
+        moveNoButton();
+        tinyNote.textContent = 'that button is a little shy 🙈 try the pink one!';
+      });
+      noButton.addEventListener('focus', function () {
+        tinyNote.textContent = 'the pink button is right there if you mean YES 💗';
+      });
+
+      function celebrate() {
+        questionCard.hidden = true;
+        successCard.hidden = false;
+        document.title = 'Yayy! 💕';
+        launchConfetti();
+      }
+      yesButton.addEventListener('click', celebrate);
+
+      function launchConfetti() {
+        const colors = ['#f56eab', '#ffd166', '#8bd9bc', '#bf9aff', '#ff94a9', '#ffffff'];
+        for (let i = 0; i < 48; i += 1) {
+          const piece = document.createElement('span');
+          piece.className = 'confetti';
+          piece.style.left = (Math.random() * 100) + 'vw';
+          piece.style.background = colors[i % colors.length];
+          piece.style.animationDelay = (Math.random() * .9) + 's';
+          piece.style.animationDuration = (2 + Math.random() * 1.7) + 's';
+          piece.style.setProperty('--drift', ((Math.random() - .5) * 180) + 'px');
+          document.body.appendChild(piece);
+          window.setTimeout(function () { piece.remove(); }, 4800);
+        }
+      }
+
+      shareButton.addEventListener('click', async function () {
+        const shareData = {
+          title: 'A little question for you 💗',
+          text: 'I made a little love-question page. Come see it! 💕',
+          url: window.location.href
+        };
+        try {
+          if (navigator.share) {
+            await navigator.share(shareData);
+            shareMessage.textContent = 'Shared with love 💗';
+          } else if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(window.location.href);
+            shareMessage.textContent = 'Link copied! Send it to your friends 💌';
+          } else {
+            showCopyFallback(window.location.href);
+          }
+        } catch (error) {
+          if (error && error.name !== 'AbortError') showCopyFallback(window.location.href);
+        }
+      });
+
+      function showCopyFallback(text) {
+        const area = document.createElement('textarea');
+        area.value = text;
+        area.setAttribute('readonly', '');
+        area.style.position = 'fixed';
+        area.style.opacity = '0';
+        document.body.appendChild(area);
+        area.select();
+        let copied = false;
+        try { copied = document.execCommand('copy'); } catch (error) {}
+        area.remove();
+        shareMessage.textContent = copied ? 'Link copied! Send it to your friends 💌' : 'Copy this page link from your browser to share 💗';
+      }
+
+      makeLinkButton.addEventListener('click', function () {
+        linkModal.hidden = false;
+        nameInput.value = '';
+        window.setTimeout(function () { nameInput.focus(); }, 40);
+      });
+      cancelModal.addEventListener('click', function () { linkModal.hidden = true; });
+      linkModal.addEventListener('click', function (event) {
+        if (event.target === linkModal) linkModal.hidden = true;
+      });
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') linkModal.hidden = true;
+      });
+      nameForm.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const name = nameInput.value.trim();
+        if (!name) { nameInput.focus(); return; }
+        const link = new URL(window.location.href);
+        link.searchParams.set('to', name);
+        link.hash = '';
+        try {
+          if (navigator.share) {
+            await navigator.share({ title: 'A little question for you 💗', text: 'I made a little question page just for you!', url: link.href });
+          } else if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(link.href);
+            shareMessage.textContent = 'Your personalised link is copied! 💌';
+          } else {
+            showCopyFallback(link.href);
+          }
+          linkModal.hidden = true;
+        } catch (error) {
+          if (error && error.name !== 'AbortError') {
+            shareMessage.textContent = 'Your link is ready: ' + link.href;
+            linkModal.hidden = true;
+          }
+        }
+      });
+    }());
+  </script>
+</body>
+</html>
