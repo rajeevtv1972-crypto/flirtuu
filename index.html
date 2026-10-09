@@ -133,7 +133,7 @@
       cursor: pointer;
       font-size: 14px;
       font-weight: 800;
-      transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+      transition: transform .18s ease, box-shadow .18s ease, background .18s ease, font-size .24s ease, padding .24s ease, min-height .24s ease, min-width .24s ease;
     }
     .btn:focus-visible, input:focus-visible { outline: 3px solid #ed76a8; outline-offset: 3px; }
     .btn:active { transform: scale(.97); }
@@ -370,9 +370,12 @@
       document.title = 'A little question for ' + (givenName || 'you') + ' 💗';
       questionTitle.setAttribute('aria-label', (givenName || 'Hey girl') + ', will you be my girlfriend?');
 
-      let noAttempts = 0;
+      let failedAttempts = 0;
       let lastDodgeAt = 0;
+      let lastProximityDodgeAt = 0;
       let wanderTimer = null;
+      let lastPointerX = null;
+      let lastPointerY = null;
 
       function clamp(value, min, max) {
         return Math.min(Math.max(value, min), Math.max(min, max));
@@ -386,6 +389,27 @@
         noButton.style.top = Math.round(clamp(top, margin, maxTop)) + 'px';
       }
 
+      function growYesButton() {
+        failedAttempts += 1;
+        // Grow the actual button box in stages so it gets easier to hit.
+        yesButton.style.fontSize = Math.min(14 + failedAttempts * 1.35, 32) + 'px';
+        yesButton.style.padding =
+          Math.min(12 + failedAttempts * 1.4, 34) + 'px ' +
+          Math.min(24 + failedAttempts * 2.6, 58) + 'px';
+        yesButton.style.minHeight = Math.min(43 + failedAttempts * 3, 104) + 'px';
+        yesButton.style.minWidth = Math.min(110 + failedAttempts * 7, Math.min(280, window.innerWidth - 48)) + 'px';
+        yesButton.style.maxWidth = 'calc(100vw - 48px)';
+        yesButton.style.whiteSpace = 'normal';
+        tinyNote.textContent = failedAttempts >= 8
+          ? 'okay, okay… YES is getting HUGE! 😂💖'
+          : 'every failed chase makes YES bigger 💗';
+      }
+
+      function setYesGrowthForCurrentSize() {
+        if (failedAttempts <= 0) return;
+        yesButton.style.minWidth = Math.min(110 + failedAttempts * 7, Math.min(280, window.innerWidth - 48)) + 'px';
+      }
+
       function hideNoBehindYes() {
         const yesRect = yesButton.getBoundingClientRect();
         setNoPosition(
@@ -395,14 +419,20 @@
         tinyNote.textContent = 'where did No go? 🙈 it’s hiding behind YES! 💖';
       }
 
-      function moveNoButton() {
+      function moveNoButton(isFailedAttempt) {
         if (successCard.hidden === false) return;
-        noAttempts += 1;
 
-        // Every few hops, let the Yes button cover No completely.
-        if (noAttempts % 4 === 0) {
-          hideNoBehindYes();
-          return;
+        if (isFailedAttempt) {
+          const now = performance.now();
+          if (now - lastDodgeAt < 260) return;
+          lastDodgeAt = now;
+          growYesButton();
+
+          // Every fourth failed chase, tuck No underneath the growing Yes button.
+          if (failedAttempts % 4 === 0) {
+            hideNoBehindYes();
+            return;
+          }
         }
 
         const maxLeft = window.innerWidth - noButton.offsetWidth - 8;
@@ -410,53 +440,72 @@
         let left = 8 + Math.random() * Math.max(0, maxLeft - 8);
         let top = 8 + Math.random() * Math.max(0, maxTop - 8);
 
-        // Avoid landing directly beneath the pointer when the user is chasing it.
+        // Try not to let No land near the current pointer location.
         if (typeof lastPointerX === 'number' && typeof lastPointerY === 'number') {
-          const tooClose = Math.hypot(left - lastPointerX, top - lastPointerY) < 130;
-          if (tooClose) {
-            left = (left + maxLeft * 0.57) % Math.max(1, maxLeft);
-            top = (top + maxTop * 0.61) % Math.max(1, maxTop);
+          for (let tries = 0; tries < 6; tries += 1) {
+            const centerX = left + noButton.offsetWidth / 2;
+            const centerY = top + noButton.offsetHeight / 2;
+            if (Math.hypot(centerX - lastPointerX, centerY - lastPointerY) >= 170) break;
+            left = 8 + Math.random() * Math.max(0, maxLeft - 8);
+            top = 8 + Math.random() * Math.max(0, maxTop - 8);
           }
         }
 
         setNoPosition(left, top);
-        tinyNote.textContent = noAttempts > 2
-          ? 'you can chase it all over the screen 😜'
-          : 'catch that No button if you can 🙈';
+        if (!isFailedAttempt) {
+          tinyNote.textContent = 'No is roaming… move your cursor close to chase it 🙈';
+        } else if (failedAttempts < 8) {
+          tinyNote.textContent = 'missed! YES just got bigger 💗';
+        }
       }
 
-      let lastPointerX = null;
-      let lastPointerY = null;
       document.addEventListener('pointermove', function (event) {
         lastPointerX = event.clientX;
         lastPointerY = event.clientY;
+        if (successCard.hidden === false || noButton.hidden) return;
+
+        // Dodge as the pointer approaches, even before it touches the button.
+        const rect = noButton.getBoundingClientRect();
+        const dx = Math.max(rect.left - event.clientX, 0, event.clientX - rect.right);
+        const dy = Math.max(rect.top - event.clientY, 0, event.clientY - rect.bottom);
+        if (Math.hypot(dx, dy) < 135) {
+          const now = performance.now();
+          if (now - lastProximityDodgeAt > 320) {
+            lastProximityDodgeAt = now;
+            moveNoButton(true);
+          }
+        }
       }, { passive: true });
 
       noButton.addEventListener('pointerenter', function (event) {
-        if (event.pointerType === 'mouse' || event.pointerType === 'pen') moveNoButton();
+        if (event.pointerType === 'mouse' || event.pointerType === 'pen') {
+          moveNoButton(true);
+        }
       });
       noButton.addEventListener('pointerdown', function (event) {
         event.preventDefault();
         event.stopPropagation();
-        moveNoButton();
+        moveNoButton(true);
       });
       noButton.addEventListener('click', function (event) {
         event.preventDefault();
         event.stopImmediatePropagation();
-        moveNoButton();
+        moveNoButton(true);
       });
       noButton.addEventListener('keydown', function (event) {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
-          moveNoButton();
+          moveNoButton(true);
         }
       });
-      noButton.addEventListener('focus', moveNoButton);
+      noButton.addEventListener('focus', function () {
+        moveNoButton(true);
+      });
 
       function startWandering() {
         if (wanderTimer) window.clearInterval(wanderTimer);
         wanderTimer = window.setInterval(function () {
-          if (!document.hidden && successCard.hidden) moveNoButton();
+          if (!document.hidden && successCard.hidden) moveNoButton(false);
         }, 1900);
       }
 
@@ -467,12 +516,13 @@
       }
       placeNoNearYes();
       window.setTimeout(function () {
-        moveNoButton();
+        moveNoButton(false);
         startWandering();
       }, 1100);
 
       window.addEventListener('resize', function () {
         setNoPosition(parseFloat(noButton.style.left) || 8, parseFloat(noButton.style.top) || 8);
+        setYesGrowthForCurrentSize();
       });
 
       function celebrate() {
