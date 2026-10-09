@@ -3,7 +3,7 @@
 A cute, responsive Valentine-style question page inspired by the supplied reference video.
 
 ## Features
-- Personalised question using the `?to=Name` URL parameter (defaults to Nirali).
+- Personalised question using the `?to=Name` URL parameter (defaults to “Hey girl” for bulk sharing).
 - Playful No button and a celebratory Yes screen.
 - Animated bear artwork, floating hearts, and confetti.
 - Share support and a form to generate a personalised share link.
