@@ -629,44 +629,62 @@
         });
       }
 
-      async function getShareLink(longUrl) {
-        try {
-          return { url: await shortenShareUrl(longUrl), shortened: true };
-        } catch (error) {
-          console.warn('Short link unavailable; using the original URL.', error);
-          return { url: longUrl, shortened: false };
+      const shortLinkCache = new Map();
+      const shortLinkRequests = new Map();
+
+      function getShareLink(longUrl) {
+        // Reuse created links so repeat shares don't consume the shortener's rate limit.
+        if (shortLinkCache.has(longUrl)) {
+          return Promise.resolve({ url: shortLinkCache.get(longUrl), shortened: true });
         }
+        if (shortLinkRequests.has(longUrl)) return shortLinkRequests.get(longUrl);
+
+        const request = shortenShareUrl(longUrl).then(function (shortUrl) {
+          shortLinkCache.set(longUrl, shortUrl);
+          return { url: shortUrl, shortened: true };
+        }).finally(function () {
+          shortLinkRequests.delete(longUrl);
+        });
+
+        shortLinkRequests.set(longUrl, request);
+        return request;
       }
 
       shareButton.addEventListener('click', async function () {
-        const originalUrl = window.location.href;
         shareButton.disabled = true;
-        shareMessage.textContent = 'Making a short share link… 💌';
-        const shareLink = await getShareLink(originalUrl);
-        const copiedMessage = shareLink.shortened
-          ? 'Short link copied! Send it to your friends 💌'
-          : 'Short link unavailable; copied the full link 💗';
+        shareMessage.textContent = 'Creating your short link automatically… 💌';
+        let shortUrl = '';
+
+        try {
+          const shareLink = await getShareLink(window.location.href);
+          shortUrl = shareLink.url;
+        } catch (error) {
+          console.warn('Short-link creation failed.', error);
+          shareMessage.textContent = 'Could not create a short link right now. Nothing was shared—please try again shortly 💗';
+          shareButton.disabled = false;
+          return;
+        }
+
         try {
           if (navigator.share) {
             await navigator.share({
               title: 'A little question for you 💗',
               text: 'I made a little love-question page. Come see it! 💕',
-              url: shareLink.url
+              url: shortUrl
             });
-            shareMessage.textContent = shareLink.shortened
-              ? 'Your masked share link is ready! 💗'
-              : 'Short link unavailable; shared the original link 💗';
+            shareMessage.textContent = 'Short link shared! 💌 ' + shortUrl;
           } else if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(shareLink.url);
-            shareMessage.textContent = copiedMessage;
+            await navigator.clipboard.writeText(shortUrl);
+            shareMessage.textContent = 'Short link copied! Send it to your friends 💌 ' + shortUrl;
           } else {
-            showCopyFallback(shareLink.url);
-            if (!shareLink.shortened) {
-              shareMessage.textContent = 'Short link unavailable; copy the full link from your browser 💗';
-            }
+            showCopyFallback(shortUrl);
           }
         } catch (error) {
-          if (error && error.name !== 'AbortError') showCopyFallback(shareLink.url);
+          if (error && error.name === 'AbortError') {
+            shareMessage.textContent = 'Short link created—sharing was cancelled. You can still copy it: ' + shortUrl;
+          } else {
+            showCopyFallback(shortUrl);
+          }
         } finally {
           shareButton.disabled = false;
         }
@@ -683,7 +701,7 @@
         let copied = false;
         try { copied = document.execCommand('copy'); } catch (error) {}
         area.remove();
-        shareMessage.textContent = copied ? 'Link copied! Send it to your friends 💌' : 'Copy this page link from your browser to share 💗';
+        shareMessage.textContent = copied ? 'Short link copied! Send it to your friends 💌' : 'Short link is ready: ' + text;
       }
 
       makeLinkButton.addEventListener('click', function () {
@@ -711,33 +729,41 @@
           submitButton.disabled = true;
           submitButton.textContent = 'Creating short link…';
         }
-        const shareLink = await getShareLink(link.href);
+
+        let shortUrl = '';
+        try {
+          const shareLink = await getShareLink(link.href);
+          shortUrl = shareLink.url;
+        } catch (error) {
+          console.warn('Personalised short-link creation failed.', error);
+          shareMessage.textContent = 'Could not create your short link right now. Please try again shortly 💗';
+          if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Create link ✨';
+          }
+          return;
+        }
+
         try {
           if (navigator.share) {
             await navigator.share({
               title: 'A little question for you 💗',
               text: 'I made a little question page just for you!',
-              url: shareLink.url
+              url: shortUrl
             });
-            shareMessage.textContent = shareLink.shortened
-              ? 'Your masked personalised link is ready! 💌'
-              : 'Short link unavailable; your personalised link is ready without masking 💗';
+            shareMessage.textContent = 'Your personalised short link is ready! 💌 ' + shortUrl;
           } else if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(shareLink.url);
-            shareMessage.textContent = shareLink.shortened
-              ? 'Your masked personalised link is copied! 💌'
-              : 'Short link unavailable; your full personalised link is copied 💗';
+            await navigator.clipboard.writeText(shortUrl);
+            shareMessage.textContent = 'Your personalised short link is copied! 💌 ' + shortUrl;
           } else {
-            showCopyFallback(shareLink.url);
-            shareMessage.textContent = shareLink.shortened
-              ? 'Your masked personalised link is ready to copy! 💌'
-              : 'Short link unavailable; use your full personalised link 💗';
+            showCopyFallback(shortUrl);
           }
           linkModal.hidden = true;
         } catch (error) {
-          if (error && error.name !== 'AbortError') {
-            shareMessage.textContent = 'Your link is ready: ' + shareLink.url;
-            linkModal.hidden = true;
+          if (error && error.name === 'AbortError') {
+            shareMessage.textContent = 'Your personalised short link is ready to copy: ' + shortUrl;
+          } else {
+            showCopyFallback(shortUrl);
           }
         } finally {
           if (submitButton) {
