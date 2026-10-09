@@ -251,6 +251,51 @@
       border-radius: 3px; pointer-events: none;
       animation: confetti-fall 2.8s linear forwards;
     }
+    .extra-love-section {
+      width: min(100%, 360px);
+      margin: 0 auto 18px;
+    }
+    .extra-love-title {
+      margin: 3px 0 10px;
+      color: #a13d70;
+      font-size: 15px;
+      line-height: 1.3;
+      letter-spacing: -.2px;
+    }
+    .love-gif-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 9px;
+    }
+    .love-gif-card {
+      min-width: 0;
+      margin: 0;
+      padding: 6px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.94);
+      border-radius: 15px;
+      background: rgba(255,255,255,.72);
+      box-shadow: 0 4px 12px rgba(179, 74, 119, .08);
+    }
+    .love-gif-card img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1 / .78;
+      border-radius: 10px;
+      object-fit: cover;
+      background: #ffeaf3;
+    }
+    .love-gif-card figcaption {
+      margin: 6px 2px 1px;
+      color: #9c6680;
+      font-size: 10px;
+      line-height: 1.35;
+    }
+    .love-gif-card figcaption a {
+      color: inherit;
+      text-decoration: none;
+    }
+    .love-gif-card figcaption a:hover { text-decoration: underline; }
     @keyframes scene-fade { from { opacity: 0; } to { opacity: 1; } }
     @keyframes arrive { from { opacity: 0; transform: translateY(12px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
     @keyframes bob { 0%,100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-7px) rotate(1deg); } }
@@ -317,6 +362,27 @@
         <span class="heart-float c" aria-hidden="true">💕</span>
         <img class="dancing-bear-gif" src="https://media1.tenor.com/m/gVC_auLWNEkAAAAd/bear-love.gif" alt="A cute brown bear and white cat hugging with floating hearts" width="320" height="256" decoding="async">
       </div>
+      <section class="extra-love-section" aria-labelledby="extraLoveTitle">
+        <h2 class="extra-love-title" id="extraLoveTitle">A little extra love 💞</h2>
+        <div class="love-gif-grid">
+          <figure class="love-gif-card">
+            <img src="https://media1.tenor.com/m/EYU_t75LldAAAAAd/cute-bear-hug.gif" alt="Two cute bears sharing a hug" loading="lazy" decoding="async">
+            <figcaption><a href="https://tenor.com/view/cute-bear-hug-love-you-gif-21810409" target="_blank" rel="noopener noreferrer">Bear hugs 💗 · Tenor</a></figcaption>
+          </figure>
+          <figure class="love-gif-card">
+            <img src="https://media.tenor.com/Fh39BC4pwNAAAAAM/snuggles-snuggle.gif" alt="Cute characters cuddling together" loading="lazy" decoding="async">
+            <figcaption><a href="https://tenor.com/search/snuggles-gifs" target="_blank" rel="noopener noreferrer">Cozy cuddles 🧸 · Tenor</a></figcaption>
+          </figure>
+          <figure class="love-gif-card">
+            <img src="https://media.tenor.com/Bq89l_QP5HcAAAAM/dudu-flow-kiss-cute-dudu.gif" alt="Cute cartoon bear blowing a kiss" loading="lazy" decoding="async">
+            <figcaption><a href="https://tenor.com/search/cute-bear-love-gifs" target="_blank" rel="noopener noreferrer">Little kisses 😘 · Tenor</a></figcaption>
+          </figure>
+          <figure class="love-gif-card">
+            <img src="https://media.tenor.com/Iwd5nh7kXSkAAAAM/milk-and-mocha-milk.gif" alt="Sweet Milk and Mocha bear animation" loading="lazy" decoding="async">
+            <figcaption><a href="https://tenor.com/search/milk-and-mocha-gifs" target="_blank" rel="noopener noreferrer">Milk & Mocha 💕 · Tenor</a></figcaption>
+          </figure>
+        </div>
+      </section>
       <div class="success-actions">
         <button class="btn secondary" type="button" id="shareButton">Share with Friends</button>
         <button class="btn primary" type="button" id="makeLinkButton">Make Your Own Link</button>
