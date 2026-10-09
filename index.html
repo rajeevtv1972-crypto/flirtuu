@@ -588,28 +588,98 @@
         }
       }
 
+      const QUIETLINK_ORIGIN = 'https://quiet-link.pages.dev';
+      const QUIETLINK_API = QUIETLINK_ORIGIN + '/api/shorten';
+      const QUIETLINK_EXPIRY_SECONDS = 30 * 24 * 60 * 60;
+      const quietLinkCache = new Map();
+      const quietLinkRequests = new Map();
+
+      async function createAnonymousLink(destinationUrl) {
+        const cached = quietLinkCache.get(destinationUrl);
+        if (cached && (!cached.expiresAt || Date.now() < cached.expiresAt)) {
+          return cached.shortUrl;
+        }
+        if (cached) quietLinkCache.delete(destinationUrl);
+        if (quietLinkRequests.has(destinationUrl)) return quietLinkRequests.get(destinationUrl);
+
+        const request = (async function () {
+          const response = await fetch(QUIETLINK_API, {
+            method: 'POST',
+            mode: 'cors',
+            credentials: 'omit',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+              url: destinationUrl,
+              expiresInSeconds: QUIETLINK_EXPIRY_SECONDS
+            })
+          });
+
+          const data = await response.json().catch(function () { return {}; });
+          if (!response.ok) {
+            throw new Error(data.error || 'QuietLink could not create the anonymous link (HTTP ' + response.status + ').');
+          }
+
+          let short;
+          try { short = new URL(data.shortUrl); } catch (error) {
+            throw new Error('QuietLink returned an invalid short link.');
+          }
+          if (short.origin !== QUIETLINK_ORIGIN || !data.shortUrl) {
+            throw new Error('QuietLink returned an unexpected short-link URL.');
+          }
+
+          quietLinkCache.set(destinationUrl, {
+            shortUrl: short.href,
+            expiresAt: Number.isFinite(data.expiresAt) ? data.expiresAt : null
+          });
+          return short.href;
+        }());
+
+        quietLinkRequests.set(destinationUrl, request);
+        try {
+          return await request;
+        } finally {
+          quietLinkRequests.delete(destinationUrl);
+        }
+      }
+
       shareButton.addEventListener('click', async function () {
         const pageUrl = window.location.href;
         shareButton.disabled = true;
+        shareMessage.textContent = 'Creating your anonymous QuietLink… 💌';
+
+        let shortUrl;
+        try {
+          shortUrl = await createAnonymousLink(pageUrl);
+        } catch (error) {
+          shareMessage.textContent = 'QuietLink could not create your link. ' +
+            (error && error.message ? error.message : 'Please try again after QuietLink finishes deploying.') + ' 💗';
+          shareButton.disabled = false;
+          return;
+        }
+
         try {
           if (navigator.share) {
             await navigator.share({
               title: 'A little question for you 💗',
               text: 'I made a little love-question page. Come see it! 💕',
-              url: pageUrl
+              url: shortUrl
             });
-            shareMessage.textContent = 'Shared with love 💗';
+            shareMessage.textContent = 'Anonymous QuietLink shared! 💌';
           } else if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(pageUrl);
-            shareMessage.textContent = 'Link copied! Send it to your friends 💌';
+            await navigator.clipboard.writeText(shortUrl);
+            shareMessage.textContent = 'Anonymous QuietLink copied! Send it to your friends 💌';
           } else {
-            showCopyFallback(pageUrl);
+            showCopyFallback(shortUrl);
           }
         } catch (error) {
           if (error && error.name === 'AbortError') {
-            shareMessage.textContent = 'Sharing cancelled. You can still copy the page link 💗';
+            shareMessage.textContent = 'Your anonymous link is ready to copy 💗';
+            showCopyFallback(shortUrl);
           } else {
-            showCopyFallback(pageUrl);
+            showCopyFallback(shortUrl);
           }
         } finally {
           shareButton.disabled = false;
@@ -657,7 +727,22 @@
 
         if (submitButton) {
           submitButton.disabled = true;
-          submitButton.textContent = 'Preparing link…';
+          submitButton.textContent = 'Creating anonymous link…';
+        }
+        shareMessage.textContent = 'Making your personalised QuietLink… 💌';
+
+        let shortUrl;
+        try {
+          shortUrl = await createAnonymousLink(personalisedUrl);
+        } catch (error) {
+          shareMessage.textContent = 'QuietLink could not create your personalised link. ' +
+            (error && error.message ? error.message : 'Please try again after QuietLink finishes deploying.') + ' 💗';
+          return;
+        } finally {
+          if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Create link ✨';
+          }
         }
 
         try {
@@ -665,26 +750,24 @@
             await navigator.share({
               title: 'A little question for you 💗',
               text: 'I made a little question page just for you!',
-              url: personalisedUrl
+              url: shortUrl
             });
-            shareMessage.textContent = 'Your personalised link is ready! 💌';
+            shareMessage.textContent = 'Your personalised anonymous QuietLink is ready! 💌';
           } else if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(personalisedUrl);
-            shareMessage.textContent = 'Your personalised link is copied! 💌';
+            await navigator.clipboard.writeText(shortUrl);
+            shareMessage.textContent = 'Your personalised anonymous link is copied! 💌';
           } else {
-            showCopyFallback(personalisedUrl);
+            showCopyFallback(shortUrl);
           }
           linkModal.hidden = true;
         } catch (error) {
           if (error && error.name === 'AbortError') {
-            shareMessage.textContent = 'Your personalised link is ready to copy 💗';
+            shareMessage.textContent = 'Your personalised anonymous link is ready to copy 💗';
+            showCopyFallback(shortUrl);
+            linkModal.hidden = true;
           } else {
-            showCopyFallback(personalisedUrl);
-          }
-        } finally {
-          if (submitButton) {
-            submitButton.disabled = false;
-            submitButton.textContent = 'Create link ✨';
+            showCopyFallback(shortUrl);
+            linkModal.hidden = true;
           }
         }
       });
