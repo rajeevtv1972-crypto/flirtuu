@@ -427,8 +427,8 @@
           lastDodgeAt = now;
           growYesButton();
 
-          // Every fourth failed chase, tuck No underneath the growing Yes button.
-          if (failedAttempts % 4 === 0) {
+          // Let No dodge through seven failed chases; hide it on the eighth.
+          if (failedAttempts % 8 === 0) {
             hideNoBehindYes();
             return;
           }
