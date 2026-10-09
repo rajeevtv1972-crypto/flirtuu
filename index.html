@@ -103,13 +103,39 @@
     }
     .actions {
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 13px;
+      gap: 12px;
       margin: 23px auto 8px;
-      min-height: 48px;
       position: relative;
     }
+    .no-cloud {
+      position: relative;
+      width: min(100%, 310px);
+      height: 94px;
+      margin: 0 auto;
+      flex: 0 0 94px;
+    }
+    .no-cloud .no-button {
+      position: absolute;
+      width: 82px;
+      min-width: 82px;
+      min-height: 38px;
+      padding: 9px 6px;
+      font-size: 12px;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      will-change: left, top;
+      transition: left .14s ease, top .14s ease, transform .14s ease;
+    }
+    .no-cloud .no-button:nth-child(1) { left: 0; top: 0; }
+    .no-cloud .no-button:nth-child(2) { left: calc(50% - 41px); top: 0; }
+    .no-cloud .no-button:nth-child(3) { left: calc(100% - 82px); top: 0; }
+    .no-cloud .no-button:nth-child(4) { left: 0; top: 52px; }
+    .no-cloud .no-button:nth-child(5) { left: calc(50% - 41px); top: 52px; }
+    .no-cloud .no-button:nth-child(6) { left: calc(100% - 82px); top: 52px; }
     .btn {
       min-width: 110px;
       min-height: 43px;
@@ -131,14 +157,13 @@
     .yes:hover, .primary:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(220, 39, 111, .28); }
     .no {
       color: #655762;
-      background: rgba(255,255,255,.64);
-      border: 1px solid rgba(205, 183, 197, .58);
-      box-shadow: 0 3px 10px rgba(112, 73, 92, .04);
+      background: rgba(255,255,255,.72);
+      border: 1px solid rgba(205, 183, 197, .68);
+      box-shadow: 0 3px 10px rgba(112, 73, 92, .06);
       min-width: 82px;
       padding-inline: 18px;
-      transition: left .16s ease, top .16s ease, transform .18s ease;
+      transition: left .14s ease, top .14s ease, transform .14s ease;
     }
-    .no.running { position: absolute; z-index: 5; }
     .tiny-note { margin: 12px 0 0; color: #b36487; font-size: 11px; }
     .footer {
       text-align: center;
@@ -273,7 +298,14 @@
       <h1 id="questionTitle"><span class="recipient" id="recipientName">Hey girl</span>, will you be my girlfriend?</h1>
       <p class="subtitle">I have a tiny question for you… and I’m hoping for a very big <b>YES</b> 💗</p>
       <div class="actions" id="questionActions">
-        <button class="btn no" id="noButton" type="button">No 🙈</button>
+        <div class="no-cloud" id="noCloud" aria-label="A swarm of impossible-to-click No buttons">
+          <button class="btn no no-button" type="button" tabindex="-1" aria-hidden="true">No 🙈</button>
+          <button class="btn no no-button" type="button" tabindex="-1" aria-hidden="true">No 🙈</button>
+          <button class="btn no no-button" type="button" tabindex="-1" aria-hidden="true">No 🙈</button>
+          <button class="btn no no-button" type="button" tabindex="-1" aria-hidden="true">No 🙈</button>
+          <button class="btn no no-button" type="button" tabindex="-1" aria-hidden="true">No 🙈</button>
+          <button class="btn no no-button" type="button" tabindex="-1" aria-hidden="true">No 🙈</button>
+        </div>
         <button class="btn yes" id="yesButton" type="button">Yes! 💖</button>
       </div>
       <p class="tiny-note" id="tinyNote">psst… there’s only one right answer 😉</p>
@@ -339,9 +371,9 @@
       const successCard = document.getElementById('successCard');
       const recipientName = document.getElementById('recipientName');
       const questionTitle = document.getElementById('questionTitle');
-      const noButton = document.getElementById('noButton');
+      const noCloud = document.getElementById('noCloud');
+      const noButtons = Array.from(document.querySelectorAll('.no-button'));
       const yesButton = document.getElementById('yesButton');
-      const questionActions = document.getElementById('questionActions');
       const tinyNote = document.getElementById('tinyNote');
       const shareButton = document.getElementById('shareButton');
       const makeLinkButton = document.getElementById('makeLinkButton');
@@ -357,26 +389,88 @@
       questionTitle.setAttribute('aria-label', (givenName || 'Hey girl') + ', will you be my girlfriend?');
 
       let noAttempts = 0;
-      function moveNoButton() {
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-        noAttempts += 1;
-        const card = questionCard.getBoundingClientRect();
-        const button = noButton.getBoundingClientRect();
-        const maxLeft = Math.max(0, card.width - button.width - 28);
-        const left = 12 + Math.random() * Math.max(0, maxLeft - 12);
-        const top = 218 + Math.random() * 76;
-        noButton.classList.add('running');
-        noButton.style.left = Math.min(left, maxLeft) + 'px';
-        noButton.style.top = Math.min(top, Math.max(215, card.height - 82)) + 'px';
-        tinyNote.textContent = noAttempts > 2 ? 'hehe, you have to catch me first 😜' : 'are you sure? give that YES a chance 💕';
+      let lastDodgeAt = 0;
+
+      function shuffled(items) {
+        const result = items.slice();
+        for (let i = result.length - 1; i > 0; i -= 1) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [result[i], result[j]] = [result[j], result[i]];
+        }
+        return result;
       }
-      noButton.addEventListener('pointerenter', moveNoButton);
-      noButton.addEventListener('click', function () {
-        moveNoButton();
-        tinyNote.textContent = 'that button is a little shy 🙈 try the pink one!';
+
+      function getNoSlots() {
+        const width = noCloud.clientWidth;
+        const buttonWidth = noButtons[0]?.offsetWidth || 82;
+        const buttonHeight = noButtons[0]?.offsetHeight || 38;
+        const maxLeft = Math.max(0, width - buttonWidth);
+        const maxTop = Math.max(0, noCloud.clientHeight - buttonHeight);
+        return [
+          [0, 0],
+          [maxLeft / 2, 0],
+          [maxLeft, 0],
+          [0, maxTop],
+          [maxLeft / 2, maxTop],
+          [maxLeft, maxTop]
+        ];
+      }
+
+      function arrangeNoButtons(randomize) {
+        const slots = getNoSlots();
+        const positions = randomize ? shuffled(slots) : slots;
+        noButtons.forEach(function (button, index) {
+          const position = positions[index % positions.length];
+          button.style.left = Math.round(position[0]) + 'px';
+          button.style.top = Math.round(position[1]) + 'px';
+        });
+      }
+
+      function dodgeNoButtons(event) {
+        if (event) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        const now = performance.now();
+        if (now - lastDodgeAt < 140) return;
+        lastDodgeAt = now;
+        noAttempts += 1;
+        if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          arrangeNoButtons(true);
+        }
+        tinyNote.textContent = noAttempts > 2
+          ? 'nope, nope, nope! 😜 the pink YES is your only way out 💗'
+          : 'the No buttons keep multiplying… just tap YES! 💕';
+      }
+
+      noButtons.forEach(function (button) {
+        button.addEventListener('pointerenter', function () {
+          dodgeNoButtons();
+        });
+        button.addEventListener('pointerdown', function (event) {
+          dodgeNoButtons(event);
+        });
+        button.addEventListener('click', function (event) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          dodgeNoButtons(event);
+          tinyNote.textContent = 'Nice try 🙈 No is not an option here — press YES! 💖';
+        });
+        button.addEventListener('keydown', function (event) {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            event.stopPropagation();
+            dodgeNoButtons(event);
+          }
+        });
+        button.addEventListener('focus', function () {
+          dodgeNoButtons();
+        });
       });
-      noButton.addEventListener('focus', function () {
-        tinyNote.textContent = 'the pink button is right there if you mean YES 💗';
+
+      arrangeNoButtons(false);
+      window.addEventListener('resize', function () {
+        arrangeNoButtons(false);
       });
 
       function celebrate() {
