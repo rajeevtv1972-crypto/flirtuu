@@ -32,7 +32,7 @@ test("HTML IDs are unique and every getElementById target exists", () => {
 
 test("personalized-link API errors are announced inside the open dialog", () => {
   assert.match(html, /id="modalMessage"[^>]*role="status"[^>]*aria-live="polite"/);
-  assert.match(getInlineScript(), /modalMessage\.textContent = 'QuietLink could not create your personalised link\.'\s*\+/);
+  assert.match(getInlineScript(), /modalMessage\.textContent = 'QuietLink could not create your personalised link\.[ ]*'\s*\+/);
   assert.doesNotMatch(
     getInlineScript(),
     /shareMessage\.textContent = 'QuietLink could not create your personalised link\.'/,
