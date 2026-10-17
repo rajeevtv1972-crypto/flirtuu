@@ -246,6 +246,9 @@
     .modal-actions { display: flex; gap: 10px; }
     .modal-actions .btn { flex: 1; min-width: 0; }
     .cancel { background: #f7edf2; color: #715a69; }
+    .modal-message { min-height: 0; margin: 0 0 13px !important; color: #a33f70 !important; font-size: 12px !important; line-height: 1.45 !important; overflow-wrap: anywhere; }
+    .modal-message:empty { display: none; }
+    .static-celebration { font-size: 76px; line-height: 1; }
     .confetti {
       position: fixed; z-index: 30; top: -20px; width: 9px; height: 13px;
       border-radius: 3px; pointer-events: none;
@@ -316,6 +319,7 @@
         <span class="heart-float b" aria-hidden="true">💖</span>
         <span class="heart-float c" aria-hidden="true">💕</span>
         <img class="dancing-bear-gif" id="celebrationGif" src="https://media1.tenor.com/m/gVC_auLWNEkAAAAd/bear-love.gif" alt="A cute brown bear and white cat hugging with floating hearts" width="320" height="256" decoding="async">
+        <span class="static-celebration" id="staticCelebration" hidden aria-hidden="true">🧸💗</span>
       </div>
       <div class="success-actions">
         <button class="btn secondary" type="button" id="shareButton">Share with Friends</button>
@@ -337,6 +341,7 @@
       <p>Who’s the lucky person? Add their name and create a personalised version to share.</p>
       <form id="nameForm">
         <input id="nameInput" maxlength="40" autocomplete="off" placeholder="Their name (e.g. Alex)" aria-label="Their name" required>
+        <p class="modal-message" id="modalMessage" role="status" aria-live="polite"></p>
         <div class="modal-actions">
           <button class="btn cancel" type="button" id="cancelModal">Cancel</button>
           <button class="btn primary" type="submit">Create link ✨</button>
@@ -361,6 +366,9 @@
       const nameForm = document.getElementById('nameForm');
       const nameInput = document.getElementById('nameInput');
       const cancelModal = document.getElementById('cancelModal');
+      const modalMessage = document.getElementById('modalMessage');
+      const prefersReducedMotion = Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+      let isCreatingPersonalizedLink = false;
       const params = new URLSearchParams(window.location.search);
       const givenName = (params.get('to') || 'Hey girl').trim().slice(0, 40);
       recipientName.textContent = givenName || 'Hey girl';
@@ -547,14 +555,25 @@
       function showCelebrationGif(index) {
         const image = document.getElementById('celebrationGif');
         if (!image) return;
+        const staticArt = document.getElementById('staticCelebration');
         const gif = celebrationGifs[index];
         image.src = gif.src;
         image.alt = gif.alt;
+        image.hidden = false;
+        if (staticArt) staticArt.hidden = true;
       }
 
       function startGifSequence() {
         if (gifSequenceTimer !== null) window.clearInterval(gifSequenceTimer);
+        gifSequenceTimer = null;
         currentGifIndex = 0;
+        if (prefersReducedMotion) {
+          const image = document.getElementById('celebrationGif');
+          const staticArt = document.getElementById('staticCelebration');
+          if (image) image.hidden = true;
+          if (staticArt) staticArt.hidden = false;
+          return;
+        }
         showCelebrationGif(currentGifIndex);
         // Tenor GIFs can loop forever, so give each one its own turn.
         gifSequenceTimer = window.setInterval(function () {
@@ -569,7 +588,7 @@
         noButton.hidden = true;
         startGifSequence();
         document.title = 'Yayy! 💕';
-        launchConfetti();
+        if (!prefersReducedMotion) launchConfetti();
       }
       yesButton.addEventListener('click', celebrate);
 
@@ -702,22 +721,56 @@
           : 'Copy this page link from your browser: ' + text;
       }
 
+      function closeLinkModal(force) {
+        if (isCreatingPersonalizedLink && !force) return;
+        linkModal.hidden = true;
+        makeLinkButton.focus();
+      }
+
       makeLinkButton.addEventListener('click', function () {
+        modalMessage.textContent = '';
         linkModal.hidden = false;
         nameInput.value = '';
         window.setTimeout(function () { nameInput.focus(); }, 40);
       });
-      cancelModal.addEventListener('click', function () { linkModal.hidden = true; });
+      cancelModal.addEventListener('click', function () { closeLinkModal(false); });
       linkModal.addEventListener('click', function (event) {
-        if (event.target === linkModal) linkModal.hidden = true;
+        if (event.target === linkModal) closeLinkModal(false);
       });
       document.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape') linkModal.hidden = true;
+        if (linkModal.hidden) return;
+
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          closeLinkModal(false);
+          return;
+        }
+
+        if (event.key === 'Tab') {
+          const focusable = linkModal.querySelectorAll('input:not([disabled]), button:not([disabled])');
+          if (!focusable.length) return;
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+          if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+          }
+        }
       });
+
       nameForm.addEventListener('submit', async function (event) {
         event.preventDefault();
+        if (isCreatingPersonalizedLink) return;
+
         const name = nameInput.value.trim();
-        if (!name) { nameInput.focus(); return; }
+        if (!name) {
+          nameInput.focus();
+          modalMessage.textContent = 'Please enter a name first.';
+          return;
+        }
 
         const link = new URL(window.location.href);
         link.searchParams.set('to', name);
@@ -725,49 +778,56 @@
         const personalisedUrl = link.href;
         const submitButton = nameForm.querySelector('button[type="submit"]');
 
+        isCreatingPersonalizedLink = true;
+        nameForm.setAttribute('aria-busy', 'true');
         if (submitButton) {
           submitButton.disabled = true;
           submitButton.textContent = 'Creating anonymous link…';
         }
-        shareMessage.textContent = 'Making your personalised QuietLink… 💌';
+        cancelModal.disabled = true;
+        modalMessage.textContent = 'Creating your personalised QuietLink… 💌';
 
-        let shortUrl;
         try {
-          shortUrl = await createAnonymousLink(personalisedUrl);
-        } catch (error) {
-          shareMessage.textContent = 'QuietLink could not create your personalised link. ' +
-            (error && error.message ? error.message : 'Please try again after QuietLink finishes deploying.') + ' 💗';
-          return;
+          let shortUrl;
+          try {
+            shortUrl = await createAnonymousLink(personalisedUrl);
+          } catch (error) {
+            modalMessage.textContent = 'QuietLink could not create your personalised link. ' +
+              (error && error.message ? error.message : 'Please try again after QuietLink finishes deploying.') + ' 💗';
+            return;
+          }
+
+          try {
+            if (navigator.share) {
+              await navigator.share({
+                title: 'A little question for you 💗',
+                text: 'I made a little question page just for you!',
+                url: shortUrl
+              });
+              shareMessage.textContent = 'Your personalised anonymous QuietLink is ready! 💌';
+            } else if (navigator.clipboard && window.isSecureContext) {
+              await navigator.clipboard.writeText(shortUrl);
+              shareMessage.textContent = 'Your personalised anonymous link is copied! 💌';
+            } else {
+              showCopyFallback(shortUrl);
+            }
+          } catch (error) {
+            if (error && error.name === 'AbortError') {
+              shareMessage.textContent = 'Your personalised anonymous link is ready to copy 💗';
+              showCopyFallback(shortUrl);
+            } else {
+              showCopyFallback(shortUrl);
+            }
+          }
+
+          closeLinkModal(true);
         } finally {
+          isCreatingPersonalizedLink = false;
+          nameForm.removeAttribute('aria-busy');
+          cancelModal.disabled = false;
           if (submitButton) {
             submitButton.disabled = false;
             submitButton.textContent = 'Create link ✨';
-          }
-        }
-
-        try {
-          if (navigator.share) {
-            await navigator.share({
-              title: 'A little question for you 💗',
-              text: 'I made a little question page just for you!',
-              url: shortUrl
-            });
-            shareMessage.textContent = 'Your personalised anonymous QuietLink is ready! 💌';
-          } else if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(shortUrl);
-            shareMessage.textContent = 'Your personalised anonymous link is copied! 💌';
-          } else {
-            showCopyFallback(shortUrl);
-          }
-          linkModal.hidden = true;
-        } catch (error) {
-          if (error && error.name === 'AbortError') {
-            shareMessage.textContent = 'Your personalised anonymous link is ready to copy 💗';
-            showCopyFallback(shortUrl);
-            linkModal.hidden = true;
-          } else {
-            showCopyFallback(shortUrl);
-            linkModal.hidden = true;
           }
         }
       });
